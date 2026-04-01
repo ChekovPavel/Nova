@@ -4,6 +4,10 @@ Kapitel 14 – Moduswechsel
 Nova kann in verschiedene Betriebsmodi wechseln, die ihren
 Kommunikationsstil, ihre Reaktionszeit und ihren Ressourcenverbrauch
 beeinflussen.
+
+Neue Modi:
+- dating:  Romantisch-persönlicher Modus – warm, verspielt, emotional.
+- meeting: Besprechungsmodus – sehr konzise, strukturiert, sachlich.
 """
 
 from __future__ import annotations
@@ -26,6 +30,8 @@ class Mode:
     emotion_sensitivity: float  # 0.0–1.0
     allow_learning: bool
     sleep: bool = False
+    # Profilkontext: "private" (persönlich) oder "work" (Arbeit)
+    profile_context: str = "private"
 
 
 # ------------------------------------------------------------------
@@ -39,6 +45,7 @@ MODES: Dict[str, Mode] = {
         verbosity="normal",
         emotion_sensitivity=0.7,
         allow_learning=True,
+        profile_context="private",
     ),
     "work": Mode(
         name="work",
@@ -47,6 +54,7 @@ MODES: Dict[str, Mode] = {
         verbosity="concise",
         emotion_sensitivity=0.3,
         allow_learning=True,
+        profile_context="work",
     ),
     "relax": Mode(
         name="relax",
@@ -55,6 +63,7 @@ MODES: Dict[str, Mode] = {
         verbosity="verbose",
         emotion_sensitivity=0.9,
         allow_learning=True,
+        profile_context="private",
     ),
     "sleep": Mode(
         name="sleep",
@@ -64,6 +73,7 @@ MODES: Dict[str, Mode] = {
         emotion_sensitivity=0.1,
         allow_learning=False,
         sleep=True,
+        profile_context="private",
     ),
     "focus": Mode(
         name="focus",
@@ -72,6 +82,7 @@ MODES: Dict[str, Mode] = {
         verbosity="concise",
         emotion_sensitivity=0.2,
         allow_learning=False,
+        profile_context="work",
     ),
     "empathy": Mode(
         name="empathy",
@@ -80,6 +91,26 @@ MODES: Dict[str, Mode] = {
         verbosity="verbose",
         emotion_sensitivity=1.0,
         allow_learning=True,
+        profile_context="private",
+    ),
+    # --- Neue Modi ---
+    "dating": Mode(
+        name="dating",
+        description="Dating-Modus – romantisch, warm, verspielt und neugierig.",
+        response_delay=0.2,
+        verbosity="verbose",
+        emotion_sensitivity=0.95,
+        allow_learning=True,
+        profile_context="private",
+    ),
+    "meeting": Mode(
+        name="meeting",
+        description="Besprechungsmodus – sehr konzise, strukturiert und sachlich.",
+        response_delay=0.0,
+        verbosity="concise",
+        emotion_sensitivity=0.15,
+        allow_learning=True,
+        profile_context="work",
     ),
 }
 
@@ -91,6 +122,18 @@ _KEYWORD_TO_MODE: Dict[str, str] = {
     "fokus": "focus",
     "empathi": "empathy",
     "normal": "normal",
+    # Dating-Keywords
+    "date": "dating",
+    "flirt": "dating",
+    "romantisch": "dating",
+    "verliebt": "dating",
+    "dating": "dating",
+    # Meeting-Keywords
+    "meeting": "meeting",
+    "besprechung": "meeting",
+    "konferenz": "meeting",
+    "starte meeting": "meeting",
+    "ich hab ein meeting": "meeting",
 }
 
 
@@ -120,6 +163,11 @@ class ModeManager:
     def name(self) -> str:
         return self._current.name
 
+    @property
+    def profile_context(self) -> str:
+        """Gibt den Profilkontext des aktiven Modus zurück ('private' oder 'work')."""
+        return self._current.profile_context
+
     def switch(self, mode_name: str) -> Mode:
         """
         Wechselt in den angegebenen Modus.
@@ -138,7 +186,10 @@ class ModeManager:
         self._previous = self._current
         self._current = MODES[mode_name]
         self._mode_start = time.monotonic()
-        logger.info("Modus gewechselt: %s → %s.", self._previous.name, self._current.name)
+        logger.info(
+            "Modus gewechselt: %s → %s (Profil: %s).",
+            self._previous.name, self._current.name, self._current.profile_context,
+        )
 
         # Emotionen an Modus anpassen
         if mode_name == "relax":
@@ -147,15 +198,21 @@ class ModeManager:
             self._emotion.trigger("curiosity", intensity=0.3, source="mode_switch")
         elif mode_name == "empathy":
             self._emotion.trigger("empathy", intensity=0.5, source="mode_switch")
+        elif mode_name == "dating":
+            self._emotion.trigger("joy", intensity=0.5, source="mode_switch")
+            self._emotion.trigger("excitement", intensity=0.4, source="mode_switch")
+        elif mode_name == "meeting":
+            self._emotion.trigger("curiosity", intensity=0.2, source="mode_switch")
 
         return self._current
 
     def switch_from_text(self, text: str) -> Optional[Mode]:
         """Erkennt Moduswechsel-Intention im Text und führt ihn durch."""
         text_lower = text.lower()
-        for keyword, mode_name in _KEYWORD_TO_MODE.items():
+        # Längere Keywords zuerst prüfen (Spezifizität)
+        for keyword in sorted(_KEYWORD_TO_MODE, key=len, reverse=True):
             if keyword in text_lower:
-                return self.switch(mode_name)
+                return self.switch(_KEYWORD_TO_MODE[keyword])
         return None
 
     def restore_previous(self) -> Optional[Mode]:
@@ -170,6 +227,18 @@ class ModeManager:
 
     def is_sleeping(self) -> bool:
         return self._current.sleep
+
+    def is_meeting(self) -> bool:
+        """Gibt True zurück, wenn Nova im Besprechungsmodus ist."""
+        return self._current.name == "meeting"
+
+    def is_dating(self) -> bool:
+        """Gibt True zurück, wenn Nova im Dating-Modus ist."""
+        return self._current.name == "dating"
+
+    def is_work_context(self) -> bool:
+        """Gibt True zurück, wenn der aktive Modus zum Arbeitsprofil gehört."""
+        return self._current.profile_context == "work"
 
     def allows_learning(self) -> bool:
         return self._current.allow_learning
@@ -186,5 +255,6 @@ class ModeManager:
         return (
             f"Modus: {m.name} | {m.description} | "
             f"Ausführlichkeit: {m.verbosity} | "
-            f"Emotionssensitivität: {m.emotion_sensitivity:.0%}"
+            f"Emotionssensitivität: {m.emotion_sensitivity:.0%} | "
+            f"Profil: {m.profile_context}"
         )

@@ -41,6 +41,11 @@ class ContextManager:
     def set_active_person(self, person_id: Optional[int]) -> None:
         self._active_person_id = person_id
 
+    def set_stm(self, stm) -> None:
+        """Tauscht das aktive STM aus (z. B. beim Profilwechsel)."""
+        self._stm = stm
+        logger.debug("ContextManager: STM ausgetauscht.")
+
     def get_active_person(self):
         if self._active_person_id is None:
             return None

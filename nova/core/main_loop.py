@@ -22,12 +22,12 @@ class MainLoop:
     1. Eingabe lesen (Text oder Voice)
     2. NLP verarbeiten
     3. Person identifizieren
-    4. Sicherheitsprüfung
-    5. Kontext aufbauen
-    6. Antwort generieren
-    7. Speichern (STM/LTM)
-    8. Lernen
-    9. Modus ggf. anpassen
+    4. Modus ggf. anpassen (inkl. Profilwechsel + Meeting-Summary)
+    5. Sicherheitsprüfung
+    6. Kontext aufbauen
+    7. Antwort generieren (inkl. modusspezifischem Stil)
+    8. Speichern (STM/LTM mit Profil-Tag)
+    9. Lernen
     10. Antwort ausgeben
     """
 
@@ -95,7 +95,31 @@ class MainLoop:
         n.context_manager.set_active_person(person_id)
 
         # 3. Modus ggf. anpassen
-        n.mode_manager.switch_from_text(user_input)
+        prev_mode = n.mode_manager.name
+        switched_mode = n.mode_manager.switch_from_text(user_input)
+        current_mode = n.mode_manager.name
+
+        # 3a. Meeting verlassen → Zusammenfassung erstellen
+        meeting_summary: Optional[str] = None
+        if prev_mode == "meeting" and current_mode != "meeting":
+            meeting_entries = n.stm.get_recent(50, entry_type="message")
+            meeting_summary = n.reflection.summarize_meeting(meeting_entries)
+            n.ltm.store(
+                meeting_summary,
+                category="meeting",
+                importance=0.8,
+                tags=["meeting", "summary", "profile:work"],
+            )
+            logger.info("Meeting-Zusammenfassung gespeichert.")
+
+        # 3b. Kontextprofil wechseln (privat ↔ Arbeit)
+        if n.profile_manager:
+            switched_profile = n.profile_manager.switch_for_mode(current_mode)
+            if switched_profile:
+                # STM im ContextManager auf das neue Profil umschalten
+                n.context_manager.set_stm(n.profile_manager.active_stm())
+                # nova.stm bleibt als Hauptreferenz auf dasselbe Objekt zeigen
+                n.stm = n.profile_manager.active_stm()
 
         # Schlafmodus: nur kurze Rückmeldung
         if n.mode_manager.is_sleeping():
@@ -104,7 +128,7 @@ class MainLoop:
         # 4. Emotionen reagieren lassen
         n.emotion.react_to_text(user_input, intensity=0.3)
 
-        # 5. Relevanz-Score berechnen & STM speichern
+        # 5. Relevanz-Score berechnen & STM speichern (profilbewusst)
         relevance = n.relevance_filter.score(user_input)
         n.stm.add_message("user", user_input, relevance=relevance)
 
@@ -117,19 +141,23 @@ class MainLoop:
         # 7. Lernen (falls Modus es erlaubt)
         if n.mode_manager.allows_learning():
             n.learner.learn_from_text(user_input)
-            # Ziel-Slot direkt anlegen
             if nlp_result.slots.get("goal"):
                 n.goals.add_goal(
                     nlp_result.slots["goal"],
                     priority=0.6,
                 )
-            # Explizite Erinnerung
             if nlp_result.intent == "store_memory" and nlp_result.slots.get("memory_content"):
+                # Profil-Tag beim Speichern mitgeben
+                profile_tag = (
+                    n.profile_manager.active_ltm_tag()
+                    if n.profile_manager
+                    else "profile:private"
+                )
                 n.storage_depth.store(
                     content=nlp_result.slots["memory_content"],
                     importance=0.8,
                     category="fact",
-                    tags=nlp_result.keywords[:3],
+                    tags=nlp_result.keywords[:3] + [profile_tag],
                 )
 
         # 8. Antwort generieren
@@ -141,6 +169,25 @@ class MainLoop:
         # Krisenmodus-Check
         if n.social_safety.in_crisis_mode:
             response = n.social_safety.crisis_response() + "\n\n" + response
+
+        # Meeting verlassen: Zusammenfassung voranstellen
+        if meeting_summary:
+            response = meeting_summary + "\n\n" + response
+
+        # Modusspezifische Stil-Hinweise (Dating: Vorschläge, Meeting: Agenda)
+        if switched_mode and n.suggestion_engine:
+            context_person_id = (
+                n.context_manager.get_active_person().id
+                if n.context_manager.get_active_person()
+                else None
+            )
+            suggestion = n.suggestion_engine.suggest_for_context(
+                mode_name=current_mode,
+                person_id=context_person_id,
+                topic=keywords,
+            )
+            if suggestion:
+                response = response + "\n\n" + suggestion
 
         # 9. Antwort ins STM
         n.stm.add_message("nova", response, relevance=0.5)

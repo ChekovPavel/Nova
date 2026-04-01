@@ -158,3 +158,48 @@ class SelfReflection:
             "goal": r.top_goal,
             "personality": r.personality_summary,
         }
+
+    # ------------------------------------------------------------------
+    # Meeting-Zusammenfassung
+    # ------------------------------------------------------------------
+
+    def summarize_meeting(self, stm_entries: Optional[List] = None) -> str:
+        """
+        Erstellt eine Zusammenfassung des letzten Meetings aus STM-Einträgen.
+
+        Args:
+            stm_entries: Liste von STMEntry-Objekten (oder None für leere Zusammenfassung).
+
+        Returns:
+            Formatierter Zusammenfassungstext.
+        """
+        if not stm_entries:
+            return "📋 Meeting beendet. Keine Gesprächseinträge vorhanden."
+
+        messages = [
+            e.content for e in stm_entries
+            if hasattr(e, "content") and isinstance(e.content, dict)
+        ]
+        user_msgs = [m.get("text", "") for m in messages if m.get("role") == "user"]
+        nova_msgs = [m.get("text", "") for m in messages if m.get("role") == "nova"]
+
+        parts = ["📋 Meeting-Zusammenfassung:"]
+        parts.append(
+            f"• {len(user_msgs)} Nutzereingaben, {len(nova_msgs)} Nova-Antworten."
+        )
+
+        if user_msgs:
+            first_topic = user_msgs[0][:80].rstrip()
+            parts.append(f"• Erstes Thema: {first_topic}{'…' if len(user_msgs[0]) > 80 else ''}")
+
+        if len(user_msgs) > 1:
+            last_topic = user_msgs[-1][:80].rstrip()
+            parts.append(f"• Letztes Thema: {last_topic}{'…' if len(user_msgs[-1]) > 80 else ''}")
+
+        # Aktuelle Ziele einbeziehen
+        top_goal = self._goals.get_top_priority()
+        if top_goal:
+            parts.append(f"• Relevantes Ziel: {top_goal.title}")
+
+        parts.append("Meeting abgeschlossen. Zusammenfassung im Langzeitgedächtnis gespeichert.")
+        return "\n".join(parts)

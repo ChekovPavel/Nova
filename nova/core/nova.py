@@ -48,6 +48,8 @@ class Nova:
         self.goals = None
         self.reflection = None
         self.mode_manager = None
+        self.profile_manager = None
+        self.suggestion_engine = None
         self.voice_io = None
         self.local_stt = None
         self.person_recognition = None
@@ -89,6 +91,8 @@ class Nova:
         from nova.api.ollama_client import OllamaClient
         from nova.backup.backup_manager import BackupManager
         from nova.core.main_loop import MainLoop
+        from nova.profiles.profile_manager import ProfileManager
+        from nova.suggestions.suggestion_engine import SuggestionEngine
 
         nova = cls(config)
         cfg = nova.config
@@ -165,6 +169,9 @@ class Nova:
 
         # Modi & Voice
         nova.mode_manager = ModeManager(nova.emotion)
+        nova.profile_manager = ProfileManager(
+            stm_capacity=cfg.get("stm_capacity", 20)
+        )
         nova.voice_io = VoiceIO(cfg.get("voice", {}))
 
         # Lokales STT (Whisper / Vosk)
@@ -181,6 +188,9 @@ class Nova:
 
         # Externe Dienste (Fallback, falls Ollama nicht verfügbar)
         nova.api_client = ExternalServices(cfg.get("api", {}))
+
+        # Vorschlags-Engine
+        nova.suggestion_engine = SuggestionEngine(nova.relationships, nova.goals)
 
         # Hauptschleife
         nova.main_loop = MainLoop(nova)
