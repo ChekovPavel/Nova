@@ -49,9 +49,12 @@ class Nova:
         self.reflection = None
         self.mode_manager = None
         self.voice_io = None
+        self.local_stt = None
         self.person_recognition = None
         self.social_safety = None
         self.api_client = None
+        self.ollama = None
+        self.backup = None
         self.main_loop = None
         self.gui = None
 
@@ -79,9 +82,12 @@ class Nova:
         from nova.reflection.self_reflection import SelfReflection
         from nova.modes.mode_manager import ModeManager
         from nova.voice.voice_io import VoiceIO
+        from nova.voice.local_stt import LocalSTT
         from nova.persons.person_recognition import PersonRecognition
         from nova.safety.social_safety import SocialSafetyLayer
         from nova.api.external_services import ExternalServices
+        from nova.api.ollama_client import OllamaClient
+        from nova.backup.backup_manager import BackupManager
         from nova.core.main_loop import MainLoop
 
         nova = cls(config)
@@ -92,6 +98,17 @@ class Nova:
         # Persistenz & Sicherheit zuerst
         nova.db = DatabaseManager(cfg.get("db_path", "nova_data.db"))
         nova.security = SecurityManager(cfg.get("secret_key"))
+
+        # Backup-System (startet Hintergrund-Thread)
+        backup_cfg = cfg.get("backup", {})
+        nova.backup = BackupManager(
+            db_path=cfg.get("db_path", "nova_data.db"),
+            backup_dir=backup_cfg.get("dir", "~/nova_backups"),
+            max_backups=backup_cfg.get("max_backups", 30),
+            interval_sec=backup_cfg.get("interval_sec", 3600),
+            enabled=backup_cfg.get("enabled", True),
+        )
+        nova.backup.start()
 
         # Gedächtnis
         nova.ltm = LongTermMemory(nova.db, nova.security)
@@ -117,11 +134,26 @@ class Nova:
         # NLP & Antwortgenerierung
         nova.nlp_processor = NLPProcessor()
         nova.social_safety = SocialSafetyLayer()
+
+        # Lokales LLM (Ollama) – hat Vorrang vor externem API
+        ollama_cfg = cfg.get("ollama", {})
+        nova.ollama = OllamaClient(
+            host=ollama_cfg.get("host", "http://localhost:11434"),
+            model=ollama_cfg.get("model", "llama3.2:1b"),
+            temperature=ollama_cfg.get("temperature", 0.7),
+            max_tokens=ollama_cfg.get("max_tokens", 512),
+        )
+        if nova.ollama.is_alive():
+            logger.info("Ollama verfügbar: %s", nova.ollama.model)
+        else:
+            logger.info("Ollama nicht verfügbar – Fallback auf Regelantworten.")
+
         nova.response_generator = ResponseGenerator(
             nova.personality,
             nova.emotion,
             nova.context_manager,
             nova.social_safety,
+            ollama_client=nova.ollama,
         )
 
         # Lernen, Ziele, Reflexion
@@ -135,7 +167,19 @@ class Nova:
         nova.mode_manager = ModeManager(nova.emotion)
         nova.voice_io = VoiceIO(cfg.get("voice", {}))
 
-        # Externe Dienste
+        # Lokales STT (Whisper / Vosk)
+        stt_cfg = cfg.get("local_stt", {})
+        nova.local_stt = LocalSTT(
+            whisper_model=stt_cfg.get("whisper_model", "tiny"),
+            whisper_device=stt_cfg.get("device", "cpu"),
+            whisper_compute_type=stt_cfg.get("compute_type", "int8"),
+            vosk_model_path=stt_cfg.get("vosk_model_path", ""),
+            language=stt_cfg.get("language", "de"),
+        )
+        if nova.local_stt.available:
+            logger.info("Lokales STT verfügbar: %s", nova.local_stt.backend_name)
+
+        # Externe Dienste (Fallback, falls Ollama nicht verfügbar)
         nova.api_client = ExternalServices(cfg.get("api", {}))
 
         # Hauptschleife
@@ -158,6 +202,11 @@ class Nova:
     def shutdown(self) -> None:
         """Fährt Nova sauber herunter."""
         logger.info("Nova wird heruntergefahren …")
+        # Finales Backup vor dem Herunterfahren
+        if self.backup and self.backup.enabled:
+            logger.info("Erstelle finales Backup …")
+            self.backup.backup_now(label="shutdown")
+            self.backup.stop()
         if self.db:
             self.db.close()
         if self.voice_io:

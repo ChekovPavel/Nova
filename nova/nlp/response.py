@@ -26,11 +26,14 @@ class ResponseGenerator:
 
     Strategie:
     1. SocialSafetyLayer prüft Eingabe und Ausgabe
-    2. Intent-spezifische Vorlage wird ausgewählt
-    3. Stimmungsmodifikator (Emotion) wird eingebaut
-    4. Persönlichkeitsstil wird angewendet
-    5. Optional: LLM-Delegation für komplexe Antworten
+    2. Ollama (lokales LLM) wird bevorzugt genutzt – für alle Intents
+    3. Fallback: regelbasierte Antworten (keine LLM nötig)
+    4. Persönlichkeitsstil und Emotionszustand werden eingebaut
+    5. Externer LLM-Client als letzter Fallback (z. B. OpenAI)
     """
+
+    # Intents, die immer regelbasiert beantwortet werden (kein LLM nötig)
+    _RULE_ONLY_INTENTS = {"greeting", "farewell", "thanks", "mode_change"}
 
     def __init__(
         self,
@@ -39,12 +42,14 @@ class ResponseGenerator:
         context_manager,
         social_safety,
         llm_client=None,
+        ollama_client=None,
     ) -> None:
         self._personality = personality
         self._emotion = emotion
         self._context = context_manager
         self._safety = social_safety
-        self._llm = llm_client  # optional, wird in Kap 20 gesetzt
+        self._llm = llm_client        # externer LLM (OpenAI-kompatibel)
+        self._ollama = ollama_client  # lokales LLM (Ollama)
 
     # ------------------------------------------------------------------
     # Hauptmethode
@@ -58,6 +63,9 @@ class ResponseGenerator:
         """
         Erzeugt eine Antwort auf ein NLPResult.
 
+        Priorität der LLM-Nutzung:
+          Ollama (lokal) → externer LLM → Regelantwort
+
         Args:
             nlp_result:    Ergebnis aus NLPProcessor.process().
             extra_context: Zusätzlicher Kontext (z. B. LTM-Erinnerungen).
@@ -69,25 +77,82 @@ class ResponseGenerator:
         if not self._safety.check_input(nlp_result.raw_text):
             return self._safety.blocked_response()
 
-        # LLM-Delegation, falls verfügbar und sinnvoll
-        if self._llm and nlp_result.intent in ("question", "general", "help"):
-            context_snapshot = self._context.snapshot()
-            response = self._llm.complete(
-                user_input=nlp_result.raw_text,
-                context=context_snapshot,
-            )
-            if response:
-                return self._apply_style(response)
+        # Für einfache Intents immer Regelantwort (schneller)
+        if nlp_result.intent not in self._RULE_ONLY_INTENTS:
+            # Priorität 1: Ollama (lokales LLM)
+            if self._ollama and self._ollama.is_alive():
+                context_snapshot = self._context.snapshot()
+                history = self._build_ollama_history(context_snapshot)
+                extra_sys = self._build_extra_system(context_snapshot, extra_context)
+                response = self._ollama.chat(
+                    user_input=nlp_result.raw_text,
+                    history=history,
+                    extra_system=extra_sys,
+                )
+                if response:
+                    self._ollama.reset_availability_cache()
+                    response = self._apply_style(response)
+                    if self._safety.check_output(response):
+                        return response
 
-        # Regelbasierte Antwort
+            # Priorität 2: externer LLM
+            if self._llm:
+                context_snapshot = self._context.snapshot()
+                response = self._llm.complete(
+                    user_input=nlp_result.raw_text,
+                    context=context_snapshot,
+                )
+                if response:
+                    response = self._apply_style(response)
+                    if self._safety.check_output(response):
+                        return response
+
+        # Fallback: regelbasierte Antwort
         response = self._rule_based_response(nlp_result, extra_context or {})
         response = self._apply_style(response)
 
-        # Sicherheitsprüfung der Ausgabe
         if not self._safety.check_output(response):
             return self._safety.blocked_response()
 
         return response
+
+    # ------------------------------------------------------------------
+    # Ollama-History aus Kontext aufbauen
+    # ------------------------------------------------------------------
+
+    def _build_ollama_history(
+        self, context_snapshot: Dict[str, Any]
+    ) -> List[Dict[str, str]]:
+        """Konvertiert STM-Nachrichten in Ollama-History-Format."""
+        history = []
+        for msg in context_snapshot.get("messages", [])[-8:]:
+            role = "user" if msg.get("role") == "user" else "assistant"
+            history.append({"role": role, "content": msg.get("text", "")})
+        return history
+
+    def _build_extra_system(
+        self,
+        context_snapshot: Dict[str, Any],
+        extra_context: Optional[Dict],
+    ) -> str:
+        """Baut zusätzliche Systeminformation für Ollama zusammen."""
+        parts = []
+        person = context_snapshot.get("person")
+        if person:
+            parts.append(f"Du sprichst gerade mit {person.get('name', 'dem Nutzer')}.")
+        mood = self._emotion.mood_modifier()
+        parts.append(f"Deine aktuelle Stimmung: {mood}.")
+        style = self._personality.communication_style()
+        parts.append(
+            f"Kommunikationsstil: {style['tone']}, {style['verbosity']}."
+        )
+        # LTM-Kontext
+        if extra_context and extra_context.get("ltm"):
+            ltm_items = extra_context["ltm"][:2]
+            if ltm_items:
+                ltm_text = "; ".join(m.get("content", "") for m in ltm_items)
+                parts.append(f"Relevante Erinnerungen: {ltm_text}")
+        return " ".join(parts)
 
     # ------------------------------------------------------------------
     # Regelbasierte Antworten

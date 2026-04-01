@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import sqlite3
 import threading
 from typing import Any, Dict, List, Optional, Tuple
@@ -23,7 +24,12 @@ class DatabaseManager:
     SCHEMA_VERSION = 1
 
     def __init__(self, db_path: str = "nova_data.db") -> None:
-        self.db_path = db_path
+        # Tilde und Umgebungsvariablen expandieren (z. B. ~/nova_data/...)
+        self.db_path = os.path.expandvars(os.path.expanduser(db_path))
+        # Übergeordnetes Verzeichnis anlegen, falls nötig
+        db_dir = os.path.dirname(self.db_path)
+        if db_dir:
+            os.makedirs(db_dir, exist_ok=True)
         self._lock = threading.Lock()
         self._conn: Optional[sqlite3.Connection] = None
         self._connect()
