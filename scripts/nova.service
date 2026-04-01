@@ -1,0 +1,48 @@
+# =============================================================================
+# Nova systemd Service
+# Wird von scripts/setup_pi.sh automatisch angepasst und installiert.
+#
+# Manuelle Installation:
+#   sudo cp scripts/nova.service /etc/systemd/system/
+#   # Pfade in der Datei anpassen!
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable nova
+#   sudo systemctl start nova
+# =============================================================================
+
+[Unit]
+Description=Nova – Persönlicher KI-Assistent
+After=network.target ollama.service
+Wants=ollama.service
+
+[Service]
+Type=simple
+User=__USER__
+WorkingDirectory=__NOVA_DIR__
+ExecStart=__VENV_DIR__/bin/python __NOVA_DIR__/main.py --config __NOVA_DIR__/config.json
+ExecStop=/bin/kill -TERM $MAINPID
+
+# Neustart bei Fehler (nicht bei bewusstem Stop)
+Restart=on-failure
+RestartSec=10
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=nova
+
+# Ressourcenlimits (angepasst für Pi 4B+)
+# 3 GB = 75% von 4 GB RAM – verhindert Einfrieren des Systems
+MemoryMax=3G
+CPUQuota=90%
+
+# Sicherheit: Zugriff auf Datenpfade einschränken
+# Datenverzeichnis außerhalb Git-Repo erlauben
+ReadWritePaths=%h/nova_data %h/nova_backups
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=true
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

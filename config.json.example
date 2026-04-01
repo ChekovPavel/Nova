@@ -1,0 +1,99 @@
+{
+  "_comment": "Nova Konfigurationsvorlage – kopiere zu config.json und passe an",
+  "_wichtig": "db_path und backup.dir AUSSERHALB des Git-Repos setzen!",
+  "_tilde_hinweis": "~ wird von Python (os.path.expanduser) expandiert, aber NICHT von systemd. Im Service absolute Pfade nutzen, z.B. /home/pi/nova_data/nova_data.db",
+
+  "db_path": "~/nova_data/nova_data.db",
+
+  "_secret_key_hinweis": "Generiere mit: openssl rand -hex 32",
+  "secret_key": "DEIN_SICHERER_SCHLUESSEL_HIER",
+
+  "stm_capacity": 20,
+
+  "ollama": {
+    "_comment": "Lokales LLM via Ollama – empfohlen für Raspberry Pi",
+    "host": "http://localhost:11434",
+    "model": "llama3.2:1b",
+    "_modelle_fuer_pi": [
+      "llama3.2:1b  – 700 MB, sehr schnell (empfohlen Pi 4B+ 4GB)",
+      "llama3.2:3b  – 2 GB, bessere Qualität (empfohlen Pi 4B+ 8GB)",
+      "phi3.5:mini  – 2.2 GB, sehr effizient (Microsoft)",
+      "gemma2:2b    – 1.6 GB, Google-Modell"
+    ],
+    "_modelle_fuer_gaming_pc": [
+      "llama3.1:8b   – 4.7 GB, gute Balance, flüssig ab 8 GB VRAM (empfohlen)",
+      "mistral:7b    – 4.1 GB, schnell und qualitativ stark",
+      "qwen2.5:14b  – 8.2 GB, sehr gut für Deutsch, ab 12 GB VRAM",
+      "mixtral:8x7b – 26 GB, hohe Qualität, ab 24 GB VRAM",
+      "llama3.1:70b – 40 GB, maximale Qualität, RTX 4090 / mehrere GPUs"
+    ],
+    "temperature": 0.7,
+    "max_tokens": 512
+  },
+
+  "_gaming_pc_profil": {
+    "_hinweis": "Für Gaming-PCs mit NVIDIA-GPU: diese Werte in die jeweiligen Abschnitte übernehmen",
+    "_voraussetzungen": [
+      "1. Ollama installieren: https://ollama.ai  →  ollama pull llama3.1:8b",
+      "2. CUDA Toolkit installieren (https://developer.nvidia.com/cuda-downloads)",
+      "3. pip install faster-whisper  (für CUDA-beschleunigtes Whisper)"
+    ],
+    "stm_capacity": 50,
+    "ollama": {
+      "model": "llama3.1:8b",
+      "max_tokens": 2048
+    },
+    "local_stt": {
+      "whisper_model": "medium",
+      "device": "cuda",
+      "compute_type": "float16"
+    }
+  },
+
+  "local_stt": {
+    "_comment": "Lokales Speech-to-Text via Whisper – kein Cloud-Dienst",
+    "whisper_model": "tiny",
+    "_whisper_modelle": [
+      "tiny     – 39 MB,  ~32x Echtzeit auf Pi (empfohlen für Pi)",
+      "base     – 74 MB,  ~16x Echtzeit, bessere Qualität",
+      "small    – 244 MB, ~8x Echtzeit (nur Pi 4B+ 8GB)",
+      "medium   – 769 MB, hohe Qualität (empfohlen für Gaming-PC)",
+      "large-v3 – 1.5 GB, maximale Qualität (Gaming-PC mit CUDA)"
+    ],
+    "_device_optionen": [
+      "cpu  – universell, kein CUDA nötig",
+      "cuda – NVIDIA GPU-Beschleunigung (deutlich schneller)"
+    ],
+    "_compute_type_optionen": [
+      "int8    – sparsam, für CPU oder schwache GPUs",
+      "float16 – schnell, empfohlen für CUDA"
+    ],
+    "device": "cpu",
+    "compute_type": "int8",
+    "language": "de"
+  },
+
+  "backup": {
+    "_comment": "Backup-Verzeichnis AUSSERHALB des Git-Repos!",
+    "enabled": true,
+    "dir": "~/nova_backups",
+    "max_backups": 30,
+    "interval_sec": 3600,
+    "_tipp": "Für externes USB-Backup: /media/usb/nova_backups"
+  },
+
+  "voice": {
+    "enabled": true,
+    "language": "de-DE",
+    "tts_rate": 160,
+    "tts_volume": 0.9
+  },
+
+  "api": {
+    "_comment": "Externer LLM-Dienst – nur als Fallback, wenn Ollama nicht läuft",
+    "enabled": false,
+    "llm_endpoint": "https://api.openai.com/v1/chat/completions",
+    "llm_api_key": "",
+    "llm_model": "gpt-4o-mini"
+  }
+}
