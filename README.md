@@ -4,13 +4,63 @@ Nova ist ein vollständiger, modularer persönlicher KI-Assistent mit
 Persönlichkeit, Gedächtnis, Emotionen und einem sozialen Sicherheitsnetz.
 Unterstützt getrennte Kontextprofile für **Dating** und **Arbeit**.
 
-## Schnellstart
+## Installation & Schnellstart
+
+### Windows
+
+```cmd
+:: 1. In den Projektordner wechseln (Pfad ggf. anpassen)
+cd C:\Users\nicki\Documents\Nova-main\Nova-main
+
+:: 2. Konfigurationsdatei anlegen
+copy config.json.example config.json
+
+:: 3. Paket installieren (einmalig – danach von überall nutzbar)
+pip install -e .
+
+:: 4. Nova starten
+python -m nova           :: Konsolenmodus
+python -m nova --gui     :: GUI (Tkinter)
+nova                     :: Kurzbefehl nach Installation
+```
+
+### Linux / macOS
 
 ```bash
-pip install cryptography          # optional: starke Verschlüsselung
-python main.py                    # Konsolenmodus
-python main.py --gui              # GUI (Tkinter)
-python main.py --config cfg.json  # eigene Konfiguration
+# 1. In den Projektordner wechseln
+cd /path/to/Nova-main
+
+# 2. Konfigurationsdatei anlegen
+cp config.json.example config.json
+
+# 3. Paket installieren (einmalig)
+pip install -e .
+
+# 4. Nova starten
+python -m nova        # Konsolenmodus
+python -m nova --gui  # GUI (Tkinter)
+nova                  # Kurzbefehl nach Installation
+```
+
+> **Hinweis:** `pip install -e .` muss **im Projektordner** (wo `pyproject.toml` liegt)
+> ausgeführt werden, nicht im Home-Verzeichnis.
+
+### Ohne Installation (direkter Aufruf aus dem Projektordner)
+
+```cmd
+cd C:\Users\nicki\Documents\Nova-main\Nova-main
+copy config.json.example config.json
+python main.py
+python main.py --gui
+python main.py --config config.json
+```
+
+### Optionale Abhängigkeiten
+
+```cmd
+pip install cryptography   :: starke Verschlüsselung
+pip install openai         :: LLM-Backend (OpenAI/Ollama)
+pip install pyttsx3 SpeechRecognition  :: Sprach-I/O
 ```
 
 ## Architektur (Kapitelübersicht)
