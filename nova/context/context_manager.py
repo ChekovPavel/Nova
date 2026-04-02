@@ -116,12 +116,23 @@ class ContextManager:
     # ------------------------------------------------------------------
 
     def enrich_with_ltm(
-        self, query: str, max_memories: int = 3
+        self, query: str, max_memories: int = 3, profile_tag: Optional[str] = None
     ) -> List[Dict[str, Any]]:
-        """Lädt relevante LTM-Erinnerungen für den aktuellen Kontext."""
+        """Lädt relevante LTM-Erinnerungen für den aktuellen Kontext.
+
+        Args:
+            query:       Suchbegriff.
+            max_memories: Maximale Anzahl Erinnerungen.
+            profile_tag: Optionaler Profil-Tag für Privatsphäre-Filter
+                         (z. B. 'profile:work' oder 'profile:private').
+                         Wenn angegeben, werden nur Erinnerungen des
+                         passenden Profils (oder unmarkierte) zurückgegeben.
+        """
         if not query:
             return []
-        return self._ltm.recall(query=query, limit=max_memories)
+        return self._ltm.recall(
+            query=query, limit=max_memories, profile_tag=profile_tag
+        )
 
     def clear_session(self) -> None:
         """Setzt den Sitzungskontext zurück (nicht das Gedächtnis)."""

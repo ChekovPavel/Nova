@@ -30,6 +30,7 @@ class LongTermMemory:
         "goal",        # zielrelevante Inhalte
         "preference",  # Vorlieben und Abneigungen
         "skill",       # erlernte Fähigkeiten
+        "meeting",     # Besprechungs-Zusammenfassungen
         "general",     # sonstige Inhalte
     }
 
@@ -92,6 +93,7 @@ class LongTermMemory:
         category: Optional[str] = None,
         min_importance: float = 0.0,
         limit: int = 10,
+        profile_tag: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         """
         Sucht nach Erinnerungen.
@@ -101,6 +103,11 @@ class LongTermMemory:
             category:       Optionaler Kategorie-Filter.
             min_importance: Mindest-Wichtigkeit.
             limit:          Maximale Trefferanzahl.
+            profile_tag:    Optionaler Profil-Filter (z. B. 'profile:work').
+                            Gibt nur Erinnerungen zurück, die diesen Tag
+                            enthalten **oder** überhaupt keinen ``profile:``-Tag
+                            besitzen (unmarkierte Erinnerungen gelten als
+                            profilübergreifend).
 
         Returns:
             Liste von Erinnerungs-Dicts.
@@ -116,6 +123,13 @@ class LongTermMemory:
             sql_parts.append("AND (content LIKE ? OR tags LIKE ?)")
             q = f"%{query}%"
             params.extend([q, q])
+
+        if profile_tag:
+            # Erinnerungen mit passendem Profil-Tag ODER ohne jeglichen Profil-Tag
+            sql_parts.append(
+                "AND (tags LIKE ? OR tags NOT LIKE '%profile:%')"
+            )
+            params.append(f"%{profile_tag}%")
 
         sql_parts.append("ORDER BY importance DESC, access_count DESC LIMIT ?")
         params.append(limit)
