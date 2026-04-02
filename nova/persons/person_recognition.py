@@ -5,8 +5,9 @@ Erkennt, welche Person gerade mit Nova spricht (basierend auf
 Stimme, Name oder selbst angegebenen Informationen) und lädt
 das entsprechende Profil.
 
-Hinweis: Automatisches stilles Profiling unbekannter Dritter
-(Kapitel 16.6) ist bewusst nicht implementiert.
+Neue Personen werden bei expliziter Selbstvorstellung ("ich heiße X")
+automatisch angelegt; stilles Profiling unbekannter Dritter findet
+nicht statt.
 """
 
 from __future__ import annotations
@@ -17,11 +18,43 @@ from typing import Dict, Optional
 
 logger = logging.getLogger(__name__)
 
-# Muster, mit denen ein Nutzer seinen Namen angibt
-_NAME_PATTERNS = [
-    r"(?:ich heiße|ich bin|mein name ist|nennen sie mich|nenn mich)\s+([A-ZÄÖÜ][a-zäöüß]+(?:\s+[A-ZÄÖÜ][a-zäöüß]+)*)",
-    r"(?:i am|my name is|call me|i'm)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)",
+# Muster für eindeutige Namensangaben (IGNORECASE – Nutzer kann klein schreiben)
+_NAME_PATTERNS_IGNORECASE = [
+    r"(?:ich heiße|ich heisse|mein name ist|nennen sie mich|nenn mich)\s+"
+    r"([A-ZÄÖÜ][a-zäöüß]+(?:\s+[A-ZÄÖÜ][a-zäöüß]+)*)",
+    r"(?:my name is|call me|i'm)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)",
 ]
+
+# Muster für "ich bin X" / "i am X" – case-SENSITIV, damit Adjektive wie
+# "traurig", "glücklich", "müde" NICHT als Namen erkannt werden.
+# Trifft nur, wenn das erste Zeichen nach "ich bin" ein Großbuchstabe ist
+# (= echte Eigennamen wie "Max", "Lena", "Tim").
+_NAME_PATTERNS_CASESENSITIVE = [
+    r"ich bin\s+([A-ZÄÖÜ][a-zäöüß]+(?:\s+[A-ZÄÖÜ][a-zäöüß]+)*)",
+    r"i am\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)",
+]
+
+# Bekannte Nicht-Namen: Adjektive, Zustände, Berufe und Nationalitäten,
+# die nach "ich bin" / "i am" häufig vorkommen und kein Personenname sind.
+# Schützt vor Fehlregistrierungen, wenn "ich bin" mit Kleinschreibung
+# und case-sensitiver Prüfung NICHT greift (z. B. "ich bin max").
+_NOT_A_NAME: set = {
+    # Emotionen / Befindlichkeiten
+    "traurig", "glücklich", "froh", "wütend", "ängstlich",
+    "aufgeregt", "müde", "hungrig", "durstig", "krank", "fit",
+    "nervös", "gestresst", "entspannt", "besorgt", "einsam", "allein",
+    # Berufe
+    "ingenieur", "arzt", "ärztin", "lehrer", "lehrerin", "student",
+    "studentin", "schüler", "schülerin", "chef", "chefin",
+    "entwickler", "entwicklerin", "designer", "designerin", "rentner",
+    # Nationalitäten / Herkunft
+    "deutscher", "deutsche", "österreicher", "österreicherin",
+    "schweizer", "schweizerin", "türke", "türkin", "franzose",
+    "amerikaner", "amerikanerin", "brite", "britin",
+    # Sonstiges
+    "hier", "da", "toll", "gut", "schlecht", "schön", "fertig",
+    "bereit", "sicher", "unsicher",
+}
 
 
 class PersonRecognition:
@@ -66,13 +99,42 @@ class PersonRecognition:
         """
         Versucht, einen Eigennamen aus dem Text zu extrahieren.
 
+        Drei Stufen:
+        1. IGNORECASE – eindeutige Phrasen ("ich heiße X", "mein Name ist X"):
+           auch bei Kleinschreibung erkannt.
+        2. Case-SENSITIV – "ich bin X": nur wenn X mit Großbuchstaben beginnt
+           (echter Eigenname), damit Adjektive wie "traurig" ausgeschlossen werden.
+        3. IGNORECASE-Fallback für "ich bin X" (Kleinschreibung, z. B. "ich bin max"):
+           nur wenn X nicht in der bekannten Nicht-Namen-Liste steht.
+
         Returns:
             Erkannter Name oder None.
         """
-        for pattern in _NAME_PATTERNS:
+        # Stufe 1: eindeutige Namensphransen (IGNORECASE)
+        for pattern in _NAME_PATTERNS_IGNORECASE:
             m = re.search(pattern, text, re.IGNORECASE)
             if m:
                 return m.group(1).strip()
+
+        # Stufe 2: "ich bin / i am X" – case-SENSITIV (Großbuchstabe = echter Name)
+        for pattern in _NAME_PATTERNS_CASESENSITIVE:
+            m = re.search(pattern, text)
+            if m:
+                return m.group(1).strip()
+
+        # Stufe 3: "ich bin x" (Kleinschreibung, einzelnes Wort) –
+        # nur wenn x kein bekanntes Nicht-Name ist.
+        # Nur Einzelwort-Namen erlaubt (zwei Wörter müssen großgeschrieben sein).
+        ic_bin = re.search(
+            r"(?:ich bin|i am)\s+([a-zäöüß]+)\s*$",
+            text.lower(),
+        )
+        if ic_bin:
+            candidate = ic_bin.group(1).strip()
+            if candidate not in _NOT_A_NAME:
+                # Ersten Buchstaben groß schreiben (normalisierter Name)
+                return candidate[0].upper() + candidate[1:]
+
         return None
 
     # ------------------------------------------------------------------
@@ -84,8 +146,8 @@ class PersonRecognition:
         Analysiert Text nach Selbstidentifikation.
 
         Wenn eine bekannte Person gefunden wird, wird sie als aktiv gesetzt.
-        Wenn eine neue Person erkannt wird, wird auf explizite Bestätigung
-        gewartet (kein automatisches Anlegen).
+        Wenn der Nutzer sich neu vorstellt (``ich heiße X`` / ``mein Name ist X``),
+        wird automatisch ein neues Profil angelegt und aktiviert.
 
         Returns:
             Person-ID oder None.
@@ -100,9 +162,23 @@ class PersonRecognition:
             logger.info("Person erkannt: %s (ID %d).", name, person.id)
             return person.id
 
-        # Unbekannt – kein automatisches Anlegen, nur melden
+        # Selbstvorstellung ("ich heiße X", "mein Name ist X") → auto-registrieren
+        text_lower = text.lower()
+        self_intro = any(
+            pat in text_lower
+            for pat in ("ich heiße", "ich heisse", "mein name ist", "ich bin ")
+        )
+        if self_intro:
+            person = self.register_new_person(name, trust_level=0.8)
+            logger.info(
+                "Neue Person (Selbstvorstellung) angelegt: %s (ID %d).",
+                name, person.id,
+            )
+            return person.id
+
+        # Fremde Person, kein automatisches Anlegen
         logger.info("Unbekannte Person genannt: %r – warte auf Bestätigung.", name)
-        return None
+        return self._active_person_id
 
     def register_new_person(
         self,

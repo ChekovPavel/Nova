@@ -137,6 +137,58 @@ class Personality:
             "humor_level": humor_level,
         }
 
+    def style_for_mode(self, mode_name: str) -> Dict[str, str]:
+        """
+        Gibt modusspezifische Kommunikationsstil-Overrides zurück.
+
+        Überschreibt den Basis-Kommunikationsstil für den angegebenen Modus.
+        Im Dating-Modus: warmherzig, verspielt, hoher Humor.
+        Im Arbeits-/Meeting-Modus: professionell, direkt, kein Humor.
+
+        Args:
+            mode_name: Aktiver Modusname (z. B. 'dating', 'work', 'meeting').
+
+        Returns:
+            Dict mit 'tone', 'verbosity', 'humor_level' und optional 'compliments'.
+        """
+        base = self.communication_style()
+        if mode_name == "dating":
+            return {
+                **base,
+                "tone": "warm_playful",
+                "humor_level": "high",
+                "verbosity": "verbose",
+                "compliments": "enabled",
+                "personal_questions": "enabled",
+            }
+        if mode_name in ("work", "focus"):
+            return {
+                **base,
+                "tone": "professional",
+                "humor_level": "low",
+                "verbosity": "concise",
+                "compliments": "disabled",
+                "personal_questions": "disabled",
+            }
+        if mode_name == "meeting":
+            return {
+                **base,
+                "tone": "professional",
+                "humor_level": "none",
+                "verbosity": "concise",
+                "list_format": "enabled",
+                "compliments": "disabled",
+                "personal_questions": "disabled",
+            }
+        if mode_name == "empathy":
+            return {
+                **base,
+                "tone": "empathetic",
+                "humor_level": "low",
+                "verbosity": "verbose",
+            }
+        return base
+
     def describe(self) -> str:
         """Gibt eine menschenlesbare Persönlichkeitsbeschreibung zurück."""
         style = self.communication_style()

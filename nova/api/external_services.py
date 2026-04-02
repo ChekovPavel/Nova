@@ -16,7 +16,7 @@ import logging
 import urllib.error
 import urllib.parse
 import urllib.request
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +37,8 @@ class ExternalServices:
         self._llm_api_key: Optional[str] = cfg.get("llm_api_key")
         self._llm_model: str = cfg.get("llm_model", "gpt-3.5-turbo")
         self._weather_api_key: Optional[str] = cfg.get("weather_api_key")
+        self._calendar_endpoint: Optional[str] = cfg.get("calendar_endpoint")
+        self._calendar_api_key: Optional[str] = cfg.get("calendar_api_key")
         self._enabled: bool = cfg.get("enabled", True)
 
     # ------------------------------------------------------------------
@@ -164,6 +166,95 @@ class ExternalServices:
             return None
 
     # ------------------------------------------------------------------
+    # Kalender-Integration (Stub – Google Calendar / iCal)
+    # ------------------------------------------------------------------
+
+    def get_calendar_events(
+        self,
+        date_str: Optional[str] = None,
+        calendar_url: Optional[str] = None,
+    ) -> Optional[List[Dict[str, Any]]]:
+        """
+        Ruft Kalendereinträge ab.
+
+        Aktuell ein Stub – wird erweitert, sobald eine Calendar-API
+        konfiguriert ist (``calendar_endpoint`` + ``calendar_api_key``
+        in der Konfiguration).
+
+        Args:
+            date_str:     Datum im Format 'YYYY-MM-DD' (optional).
+            calendar_url: Direkte iCal-URL (optional).
+
+        Returns:
+            Liste von Ereignis-Dicts oder None, wenn kein Dienst konfiguriert.
+        """
+        if not self._enabled:
+            return None
+        calendar_endpoint = getattr(self, "_calendar_endpoint", None)
+        if not calendar_endpoint and not calendar_url:
+            logger.info("Keine Kalender-API konfiguriert (calendar_endpoint fehlt).")
+            return None
+        url = calendar_url or calendar_endpoint
+        try:
+            params = urllib.parse.urlencode({"date": date_str} if date_str else {})
+            full_url = f"{url}?{params}" if params else url
+            data = self._get_json(full_url)
+            if isinstance(data, list):
+                return data
+            if isinstance(data, dict):
+                return data.get("items") or data.get("events") or []
+        except Exception as exc:
+            logger.error("Kalender-Anfrage fehlgeschlagen: %s", exc)
+        return None
+
+    def create_calendar_event(
+        self,
+        title: str,
+        start: str,
+        end: str,
+        description: str = "",
+        calendar_url: Optional[str] = None,
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Erstellt einen Kalendereintrag.
+
+        Aktuell ein Stub – sendet eine POST-Anfrage, falls
+        ``calendar_endpoint`` konfiguriert ist.
+
+        Args:
+            title:        Titel des Termins.
+            start:        Startzeit (ISO-8601).
+            end:          Endzeit (ISO-8601).
+            description:  Optionale Beschreibung.
+            calendar_url: Direkte API-URL (optional).
+
+        Returns:
+            Erstelltes Ereignis-Dict oder None.
+        """
+        if not self._enabled:
+            return None
+        calendar_endpoint = getattr(self, "_calendar_endpoint", None)
+        url = calendar_url or calendar_endpoint
+        if not url:
+            logger.info("Keine Kalender-API konfiguriert – Termin nicht erstellt.")
+            return None
+        payload = {
+            "summary": title,
+            "start": {"dateTime": start},
+            "end": {"dateTime": end},
+            "description": description,
+        }
+        try:
+            headers = {}
+            calendar_key = getattr(self, "_calendar_api_key", None)
+            if calendar_key:
+                headers["Authorization"] = f"Bearer {calendar_key}"
+            return self._post_json(url, payload, headers=headers or None)
+        except Exception as exc:
+            logger.error("Kalender-Ereignis erstellen fehlgeschlagen: %s", exc)
+        return None
+
+    # ------------------------------------------------------------------
     # Verfügbarkeit
     # ------------------------------------------------------------------
 
@@ -174,3 +265,7 @@ class ExternalServices:
     @property
     def weather_available(self) -> bool:
         return bool(self._weather_api_key and self._enabled)
+
+    @property
+    def calendar_available(self) -> bool:
+        return bool(self._calendar_endpoint and self._enabled)

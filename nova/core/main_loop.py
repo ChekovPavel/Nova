@@ -13,6 +13,9 @@ from typing import Optional
 
 logger = logging.getLogger(__name__)
 
+# Maximale Anzahl STM-Einträge, die für die Meeting-Zusammenfassung ausgewertet werden
+_MAX_MEETING_ENTRIES_FOR_SUMMARY = 50
+
 
 class MainLoop:
     """
@@ -22,12 +25,12 @@ class MainLoop:
     1. Eingabe lesen (Text oder Voice)
     2. NLP verarbeiten
     3. Person identifizieren
-    4. Sicherheitsprüfung
-    5. Kontext aufbauen
-    6. Antwort generieren
-    7. Speichern (STM/LTM)
-    8. Lernen
-    9. Modus ggf. anpassen
+    4. Modus ggf. anpassen (inkl. Profilwechsel + Meeting-Summary)
+    5. Sicherheitsprüfung
+    6. Kontext aufbauen
+    7. Antwort generieren (inkl. modusspezifischem Stil)
+    8. Speichern (STM/LTM mit Profil-Tag)
+    9. Lernen
     10. Antwort ausgeben
     """
 
@@ -94,42 +97,81 @@ class MainLoop:
         person_id = n.person_recognition.identify_from_text(user_input)
         n.context_manager.set_active_person(person_id)
 
+        # 2a. Profil der aktiven Person aus Text anreichern (auto-learning)
+        if n.profile_enricher and person_id:
+            active_person = n.person_recognition.get_active_person()
+            if active_person:
+                n.profile_enricher.enrich_from_text(active_person, user_input)
+
         # 3. Modus ggf. anpassen
-        n.mode_manager.switch_from_text(user_input)
+        prev_mode = n.mode_manager.name
+        switched_mode = n.mode_manager.switch_from_text(user_input)
+        current_mode = n.mode_manager.name
+
+        # 3a. Meeting verlassen → Zusammenfassung erstellen
+        meeting_summary: Optional[str] = None
+        if prev_mode == "meeting" and current_mode != "meeting":
+            meeting_entries = n.stm.get_recent(_MAX_MEETING_ENTRIES_FOR_SUMMARY, entry_type="message")
+            meeting_summary = n.reflection.summarize_meeting(meeting_entries)
+            n.ltm.store(
+                meeting_summary,
+                category="meeting",
+                importance=0.8,
+                tags=["meeting", "summary", "profile:work"],
+            )
+            logger.info("Meeting-Zusammenfassung gespeichert.")
+
+        # 3b. Kontextprofil wechseln (privat ↔ Arbeit)
+        if n.profile_manager:
+            switched_profile = n.profile_manager.switch_for_mode(current_mode)
+            if switched_profile:
+                # STM im ContextManager auf das neue Profil umschalten
+                n.context_manager.set_stm(n.profile_manager.active_stm())
+                # nova.stm bleibt als Hauptreferenz auf dasselbe Objekt zeigen
+                n.stm = n.profile_manager.active_stm()
 
         # Schlafmodus: nur kurze Rückmeldung
         if n.mode_manager.is_sleeping():
             return "Ich bin im Schlafmodus. Sage 'Normalmodus' zum Aufwecken."
 
-        # 4. Emotionen reagieren lassen
+        # 4. Emotionen reagieren lassen (Keyword + Sentiment)
         n.emotion.react_to_text(user_input, intensity=0.3)
+        if nlp_result.sentiment != 0.0:
+            n.emotion.react_to_sentiment(nlp_result.sentiment, intensity=0.25)
 
-        # 5. Relevanz-Score berechnen & STM speichern
+        # 5. Relevanz-Score berechnen & STM speichern (profilbewusst)
         relevance = n.relevance_filter.score(user_input)
         n.stm.add_message("user", user_input, relevance=relevance)
 
-        # 6. Kontext aufbauen (LTM-Anreicherung)
+        # 6. Kontext aufbauen (LTM-Anreicherung, profilbewusst)
         keywords = " ".join(nlp_result.keywords[:3])
+        active_profile_tag = (
+            n.profile_manager.active_ltm_tag() if n.profile_manager else None
+        )
         ltm_context = n.context_manager.enrich_with_ltm(
-            keywords, max_memories=2
+            keywords, max_memories=2, profile_tag=active_profile_tag
         )
 
         # 7. Lernen (falls Modus es erlaubt)
         if n.mode_manager.allows_learning():
             n.learner.learn_from_text(user_input)
-            # Ziel-Slot direkt anlegen
             if nlp_result.slots.get("goal"):
                 n.goals.add_goal(
                     nlp_result.slots["goal"],
                     priority=0.6,
                 )
-            # Explizite Erinnerung
             if nlp_result.intent == "store_memory" and nlp_result.slots.get("memory_content"):
+                # Profil-Tag beim Speichern mitgeben
+                profile_tag = (
+                    n.profile_manager.active_ltm_tag()
+                    if n.profile_manager
+                    else "profile:private"
+                )
                 n.storage_depth.store(
                     content=nlp_result.slots["memory_content"],
                     importance=0.8,
                     category="fact",
-                    tags=nlp_result.keywords[:3],
+                    tags=nlp_result.keywords[:3] + [profile_tag],
                 )
 
         # 8. Antwort generieren
@@ -138,9 +180,49 @@ class MainLoop:
             extra_context={"ltm": ltm_context},
         )
 
+        # 8a. Online-Suche (Kapitel 16.6) – bei expliziter Suchanfrage
+        if nlp_result.slots.get("search_query") and n.web_search:
+            query = nlp_result.slots.get("search_query", "").strip()
+            # Mindestlänge: zu kurze Queries liefern kaum brauchbare Ergebnisse
+            if len(query) >= 3:
+                search_result = n.web_search.search_person(query)
+                formatted = n.web_search.format_result(search_result)
+                # Suchergebnis ins LTM speichern
+                if search_result.get("abstract"):
+                    n.ltm.store(
+                        content=f"Websuche '{query}': {search_result['abstract']}",
+                        category="fact",
+                        importance=0.6,
+                        tags=[query.lower(), "web_search"],
+                    )
+                response = response + "\n\n\U0001f50e **Online gefunden:**\n" + formatted
+            else:
+                logger.debug(
+                    "WebSearch: Suchanfrage zu kurz (%r), \u00fcbersprungen.", query
+                )
+
         # Krisenmodus-Check
         if n.social_safety.in_crisis_mode:
             response = n.social_safety.crisis_response() + "\n\n" + response
+
+        # Meeting verlassen: Zusammenfassung voranstellen
+        if meeting_summary:
+            response = meeting_summary + "\n\n" + response
+
+        # Modusspezifische Stil-Hinweise (Dating: Vorschläge, Meeting: Agenda)
+        if switched_mode and n.suggestion_engine:
+            context_person_id = (
+                n.context_manager.get_active_person().id
+                if n.context_manager.get_active_person()
+                else None
+            )
+            suggestion = n.suggestion_engine.suggest_for_context(
+                mode_name=current_mode,
+                person_id=context_person_id,
+                topic=keywords,
+            )
+            if suggestion:
+                response = response + "\n\n" + suggestion
 
         # 9. Antwort ins STM
         n.stm.add_message("nova", response, relevance=0.5)

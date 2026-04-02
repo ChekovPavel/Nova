@@ -140,6 +140,31 @@ class EmotionEngine:
         if emotion:
             self.trigger(emotion, intensity=intensity, source="text")
 
+    def react_to_sentiment(self, sentiment: float, intensity: float = 0.3) -> None:
+        """
+        Reagiert auf einen numerischen Sentiment-Wert aus dem NLP-Prozessor.
+
+        Mapping:
+            sentiment >  0.50  → joy          (intensity × 1.2)
+            sentiment >  0.15  → curiosity    (intensity × 0.8)
+            sentiment < -0.50  → sadness      (intensity × 1.2)
+            sentiment < -0.15  → frustration  (intensity × 0.8)
+            |sentiment| ≤ 0.15 → keine Reaktion (neutraler Bereich)
+
+        Args:
+            sentiment: Wert -1.0 (sehr negativ) bis +1.0 (sehr positiv),
+                       wie von NLPProcessor._estimate_sentiment() geliefert.
+            intensity: Basis-Intensität; wird je nach Mapping skaliert.
+        """
+        if sentiment > 0.5:
+            self.trigger("joy", intensity=intensity * 1.2, source="sentiment")
+        elif sentiment > 0.15:
+            self.trigger("curiosity", intensity=intensity * 0.8, source="sentiment")
+        elif sentiment < -0.5:
+            self.trigger("sadness", intensity=intensity * 1.2, source="sentiment")
+        elif sentiment < -0.15:
+            self.trigger("frustration", intensity=intensity * 0.8, source="sentiment")
+
     # ------------------------------------------------------------------
     # Decay (Abklingen)
     # ------------------------------------------------------------------

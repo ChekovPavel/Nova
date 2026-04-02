@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 class DatabaseManager:
     """Thread-sicherer SQLite-Wrapper für Nova."""
 
-    SCHEMA_VERSION = 1
+    SCHEMA_VERSION = 2
 
     def __init__(self, db_path: str = "nova_data.db") -> None:
         # Tilde und Umgebungsvariablen expandieren (z. B. ~/nova_data/...)
@@ -119,6 +119,14 @@ class DatabaseManager:
                 content    TEXT NOT NULL,
                 timestamp  TEXT NOT NULL,
                 person_id  INTEGER REFERENCES persons(id)
+            )""",
+            # Personen-Ereignis-Timeline (Dating / Arbeit)
+            """CREATE TABLE IF NOT EXISTS person_timeline (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                person_id   INTEGER NOT NULL REFERENCES persons(id),
+                event_type  TEXT NOT NULL,
+                description TEXT    DEFAULT '',
+                timestamp   TEXT    NOT NULL
             )""",
         ]
         with self._lock:

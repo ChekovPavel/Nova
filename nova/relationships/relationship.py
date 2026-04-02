@@ -4,6 +4,9 @@ Kapitel 8 – Beziehungsmodell (bekannte Personen)
 Verwaltet bekannte Personen mit ihren Profilen, Vertrauensstufen
 und Interaktionshistorie.  Neue Personen werden nur auf expliziten
 Wunsch des Nutzers angelegt.
+
+Erweitert mit Dating-Profil-Feldern, Beziehungsstatus und
+einer Ereignis-Timeline für persönliche und professionelle Kontakte.
 """
 
 from __future__ import annotations
@@ -13,6 +16,9 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
+
+# Gültige Beziehungsstatus-Werte
+RELATIONSHIP_STATUSES = ("stranger", "acquaintance", "crush", "dating", "partner", "ex", "colleague", "friend")
 
 
 def _now_iso() -> str:
@@ -62,6 +68,84 @@ class Person:
             "persons", {"last_seen": self.last_seen}, "id=?", (self.id,)
         )
 
+    # ------------------------------------------------------------------
+    # Dating & Beziehungs-Helfer
+    # ------------------------------------------------------------------
+
+    @property
+    def relationship_status(self) -> str:
+        """Gibt den Beziehungsstatus zurück (Standardwert: 'acquaintance')."""
+        return self.profile.get("relationship_status", "acquaintance")
+
+    def set_relationship_status(self, status: str) -> None:
+        """
+        Setzt den Beziehungsstatus.
+
+        Args:
+            status: Einer der Werte in RELATIONSHIP_STATUSES.
+        """
+        if status not in RELATIONSHIP_STATUSES:
+            logger.warning("Unbekannter Beziehungsstatus: %r", status)
+            return
+        self.update_profile("relationship_status", status)
+        logger.info("Beziehungsstatus für %s: %s.", self.name, status)
+
+    def add_interest(self, interest: str) -> None:
+        """Fügt ein Interesse zur Interessenliste der Person hinzu."""
+        interests: List[str] = self.profile.get("interests", [])
+        if interest not in interests:
+            interests.append(interest)
+            self.update_profile("interests", interests)
+
+    def get_interests(self) -> List[str]:
+        """Gibt die gespeicherten Interessen der Person zurück."""
+        return list(self.profile.get("interests", []))
+
+    def set_date_idea(self, idea: str) -> None:
+        """Speichert eine Date-Idee für diese Person."""
+        ideas: List[str] = self.profile.get("date_ideas", [])
+        if idea not in ideas:
+            ideas.append(idea)
+            self.update_profile("date_ideas", ideas)
+
+    def get_date_ideas(self) -> List[str]:
+        """Gibt gespeicherte Date-Ideen zurück."""
+        return list(self.profile.get("date_ideas", []))
+
+    def set_compatibility_notes(self, notes: str) -> None:
+        """Speichert Kompatibilitätsnotizen."""
+        self.update_profile("compatibility_notes", notes)
+
+    def dating_info(self) -> Dict[str, Any]:
+        """
+        Gibt eine Zusammenfassung der Dating-relevanten Profilfelder zurück.
+
+        Returns:
+            Dict mit relationship_status, interests, date_ideas, compatibility_notes
+            und trust_level.
+        """
+        return {
+            "name": self.name,
+            "relationship_status": self.relationship_status,
+            "interests": self.get_interests(),
+            "date_ideas": self.get_date_ideas(),
+            "compatibility_notes": self.profile.get("compatibility_notes", ""),
+            "trust_level": self.trust_level,
+            "last_seen": self.last_seen,
+        }
+
+    def trust_label(self) -> str:
+        """Gibt ein menschenlesbares Trust-Level-Label zurück."""
+        if self.trust_level < 0.2:
+            return "unbekannt"
+        if self.trust_level < 0.4:
+            return "flüchtige Bekanntschaft"
+        if self.trust_level < 0.6:
+            return "Bekanntschaft"
+        if self.trust_level < 0.8:
+            return "vertraut"
+        return "sehr vertraut"
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "id": self.id,
@@ -74,7 +158,7 @@ class Person:
         }
 
     def __repr__(self) -> str:
-        return f"<Person id={self.id} name={self.name!r} trust={self.trust_level:.2f}>"
+        return f"<Person id={self.id} name={self.name!r} trust={self.trust_level:.2f} status={self.relationship_status!r}>"
 
 
 class RelationshipModel:
@@ -198,3 +282,115 @@ class RelationshipModel:
         ).rowcount
         self._cache.pop(person_id, None)
         return rows > 0
+
+    # ------------------------------------------------------------------
+    # Ereignis-Timeline
+    # ------------------------------------------------------------------
+
+    def add_timeline_event(
+        self,
+        person_id: int,
+        event_type: str,
+        description: str = "",
+    ) -> Optional[int]:
+        """
+        Fügt ein Ereignis zur Timeline einer Person hinzu.
+
+        Args:
+            person_id:   ID der Person.
+            event_type:  Typ des Ereignisses (z. B. 'date', 'meeting',
+                         'conversation', 'milestone').
+            description: Optionale Beschreibung.
+
+        Returns:
+            Datenbank-ID des Eintrags oder None bei unbekannter Person.
+        """
+        if not self.get_by_id(person_id):
+            logger.warning("Timeline: Person %d nicht gefunden.", person_id)
+            return None
+        entry_id = self._db.insert(
+            "person_timeline",
+            {
+                "person_id": person_id,
+                "event_type": event_type,
+                "description": description,
+                "timestamp": _now_iso(),
+            },
+        )
+        logger.debug(
+            "Timeline: %s-Ereignis für Person %d gespeichert (#%d).",
+            event_type, person_id, entry_id,
+        )
+        return entry_id
+
+    def get_timeline(
+        self,
+        person_id: int,
+        event_type: Optional[str] = None,
+        limit: int = 20,
+    ) -> List[Dict[str, Any]]:
+        """
+        Gibt die Ereignis-Timeline einer Person zurück.
+
+        Args:
+            person_id:  ID der Person.
+            event_type: Optionaler Filter für den Ereignistyp.
+            limit:      Maximale Anzahl Einträge.
+
+        Returns:
+            Liste von Ereignis-Dicts (neueste zuerst).
+        """
+        if event_type:
+            rows = self._db.fetchall(
+                "SELECT * FROM person_timeline "
+                "WHERE person_id=? AND event_type=? "
+                "ORDER BY timestamp DESC LIMIT ?",
+                (person_id, event_type, limit),
+            )
+        else:
+            rows = self._db.fetchall(
+                "SELECT * FROM person_timeline "
+                "WHERE person_id=? "
+                "ORDER BY timestamp DESC LIMIT ?",
+                (person_id, limit),
+            )
+        return [dict(row) for row in rows]
+
+    def last_event(
+        self,
+        person_id: int,
+        event_type: Optional[str] = None,
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Gibt das jüngste Ereignis einer Person zurück.
+
+        Args:
+            person_id:  ID der Person.
+            event_type: Optionaler Ereignistyp-Filter.
+
+        Returns:
+            Ereignis-Dict oder None.
+        """
+        events = self.get_timeline(person_id, event_type=event_type, limit=1)
+        return events[0] if events else None
+
+    def days_since_last_event(
+        self,
+        person_id: int,
+        event_type: Optional[str] = None,
+    ) -> Optional[float]:
+        """
+        Berechnet die Tage seit dem letzten Ereignis.
+
+        Returns:
+            Anzahl Tage (float) oder None falls kein Ereignis vorhanden.
+        """
+        event = self.last_event(person_id, event_type=event_type)
+        if not event:
+            return None
+        try:
+            last_ts = datetime.fromisoformat(event["timestamp"])
+            delta = datetime.now(timezone.utc) - last_ts
+            return delta.total_seconds() / 86400
+        except (ValueError, KeyError):
+            return None
