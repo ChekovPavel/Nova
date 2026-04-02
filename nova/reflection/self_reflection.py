@@ -1,5 +1,5 @@
 """
-Kapitel 13 – Selbstreflexion
+Kapitel 13 - Selbstreflexion
 
 Nova reflektiert periodisch über ihren eigenen Zustand:
 Emotionen, Ziele, Persönlichkeit und Erinnerungen.
@@ -21,6 +21,7 @@ _REFLECTION_INTERVAL = 300  # Sekunden zwischen automatischen Reflexionen
 @dataclass
 class ReflectionResult:
     """Ergebnis einer Selbstreflexion."""
+
     emotional_state: str
     mood_modifier: str
     top_goal: str | None
@@ -64,9 +65,12 @@ class SelfReflection:
             ReflectionResult.
         """
         now = time.monotonic()
-        if not force and (now - self._last_reflection_time) < _REFLECTION_INTERVAL:
-            if self._last_reflection:
-                return self._last_reflection
+        if (
+            not force
+            and (now - self._last_reflection_time) < _REFLECTION_INTERVAL
+            and self._last_reflection
+        ):
+            return self._last_reflection
 
         emotion = self._emotion.state
         mood = self._emotion.mood_modifier()
@@ -96,9 +100,7 @@ class SelfReflection:
     # Einsichten generieren
     # ------------------------------------------------------------------
 
-    def _generate_insights(
-        self, emotion, style: dict[str, str], top_goal
-    ) -> list[str]:
+    def _generate_insights(self, emotion, style: dict[str, str], top_goal) -> list[str]:
         insights = []
 
         # Emotionaler Einblick
@@ -177,7 +179,8 @@ class SelfReflection:
             return "📋 Meeting beendet. Keine Gesprächseinträge vorhanden."
 
         messages = [
-            e.content for e in stm_entries
+            e.content
+            for e in stm_entries
             if hasattr(e, "content") and isinstance(e.content, dict)
         ]
         user_msgs = [m.get("text", "") for m in messages if m.get("role") == "user"]
@@ -190,16 +193,22 @@ class SelfReflection:
 
         if user_msgs:
             first_topic = user_msgs[0][:80].rstrip()
-            parts.append(f"• Erstes Thema: {first_topic}{'…' if len(user_msgs[0]) > 80 else ''}")
+            parts.append(
+                f"• Erstes Thema: {first_topic}{'…' if len(user_msgs[0]) > 80 else ''}"
+            )
 
         if len(user_msgs) > 1:
             last_topic = user_msgs[-1][:80].rstrip()
-            parts.append(f"• Letztes Thema: {last_topic}{'…' if len(user_msgs[-1]) > 80 else ''}")
+            parts.append(
+                f"• Letztes Thema: {last_topic}{'…' if len(user_msgs[-1]) > 80 else ''}"
+            )
 
         # Aktuelle Ziele einbeziehen
         top_goal = self._goals.get_top_priority()
         if top_goal:
             parts.append(f"• Relevantes Ziel: {top_goal.title}")
 
-        parts.append("Meeting abgeschlossen. Zusammenfassung im Langzeitgedächtnis gespeichert.")
+        parts.append(
+            "Meeting abgeschlossen. Zusammenfassung im Langzeitgedächtnis gespeichert."
+        )
         return "\n".join(parts)

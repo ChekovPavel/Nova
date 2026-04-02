@@ -1,5 +1,5 @@
 """
-Kapitel 25 – Vorschlags-Engine
+Kapitel 25 - Vorschlags-Engine
 
 Generiert kontextbezogene Vorschläge für Dating und Arbeit:
 
@@ -254,7 +254,9 @@ class SuggestionEngine:
             for goal in open_goals[:max_tasks]:
                 tasks.append(goal.title)
         except Exception as exc:
-            logger.warning("Aufgaben-Vorschläge: Fehler beim Abrufen der Ziele: %s", exc)
+            logger.warning(
+                "Aufgaben-Vorschläge: Fehler beim Abrufen der Ziele: %s", exc
+            )
 
         if not tasks:
             tasks = [

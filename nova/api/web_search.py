@@ -1,5 +1,5 @@
 """
-Kapitel 16.6 – Online-Personensuche & allgemeine Websuche
+Kapitel 16.6 - Online-Personensuche & allgemeine Websuche
 
 Ermöglicht Nova, öffentlich verfügbare Informationen über Personen
 oder Themen nachzuschlagen.
@@ -37,7 +37,7 @@ class WebSearch:
     """
     Sucht öffentlich zugängliche Informationen zu Personen und Themen.
 
-    Alle Methoden kehren bei Netzwerkfehler mit None/leerem Dict zurück –
+    Alle Methoden kehren bei Netzwerkfehler mit None/leerem Dict zurück -
     Nova läuft auch ohne Internetzugang weiter.
     """
 
@@ -134,17 +134,13 @@ class WebSearch:
     # Interne Suchmethoden
     # ------------------------------------------------------------------
 
-    def _search_wikipedia(
-        self, query: str, lang: str = "de"
-    ) -> dict[str, Any] | None:
+    def _search_wikipedia(self, query: str, lang: str = "de") -> dict[str, Any] | None:
         """Ruft die Wikipedia-Zusammenfassung für einen Begriff ab."""
         base = _WIKI_SUMMARY_DE if lang == "de" else _WIKI_SUMMARY_EN
         encoded = urllib.parse.quote(query.replace(" ", "_"))
         url = f"{base}{encoded}"
         try:
-            req = urllib.request.Request(
-                url, headers={"User-Agent": _USER_AGENT}
-            )
+            req = urllib.request.Request(url, headers={"User-Agent": _USER_AGENT})
             with urllib.request.urlopen(req, timeout=_TIMEOUT) as resp:
                 data = json.loads(resp.read().decode())
 
@@ -159,21 +155,17 @@ class WebSearch:
             return {
                 "abstract": abstract[:600],
                 "description": data.get("description"),
-                "url": (
-                    data.get("content_urls", {})
-                    .get("desktop", {})
-                    .get("page")
-                ),
+                "url": (data.get("content_urls", {}).get("desktop", {}).get("page")),
             }
         except urllib.error.HTTPError as exc:
             if exc.code != 404:
-                logger.debug(
-                    "Wikipedia (%s) HTTP-Fehler für %r: %s", lang, query, exc
-                )
+                logger.debug("Wikipedia (%s) HTTP-Fehler für %r: %s", lang, query, exc)
         except Exception as exc:
             logger.debug(
                 "Wikipedia (%s) Anfrage fehlgeschlagen für %r: %s",
-                lang, query, exc,
+                lang,
+                query,
+                exc,
             )
         return None
 
@@ -190,9 +182,7 @@ class WebSearch:
         )
         url = f"{_DDG_URL}?{params}"
         try:
-            req = urllib.request.Request(
-                url, headers={"User-Agent": _USER_AGENT}
-            )
+            req = urllib.request.Request(url, headers={"User-Agent": _USER_AGENT})
             with urllib.request.urlopen(req, timeout=_TIMEOUT) as resp:
                 data = json.loads(resp.read().decode())
 
@@ -231,13 +221,13 @@ class WebSearch:
 
         if not abstract and not description:
             return (
-                f'Ich konnte online leider keine Informationen '
+                f"Ich konnte online leider keine Informationen "
                 f'\u00fcber "{name}" finden.'
             )
 
         parts = []
         if description:
-            parts.append(f"**{name}** – {description}")
+            parts.append(f"**{name}** - {description}")
         if abstract:
             parts.append(abstract)
         if url:

@@ -1,5 +1,5 @@
 """
-Kapitel 24 – Kontext-Profilverwaltung
+Kapitel 24 - Kontext-Profilverwaltung
 
 Trennt den Kontext von privaten und beruflichen Gesprächen.
 Jedes Profil besitzt ein eigenes Kurzzeitgedächtnis (STM) und
@@ -7,8 +7,8 @@ einen eigenen Langzeitgedächtnis-Tag, so dass sich Dating-
 und Arbeits-Kontext niemals vermischen.
 
 Profile:
-    private – für Dating, Relax, Empathie, Normal, Sleep
-    work    – für Work, Meeting, Focus
+    private - für Dating, Relax, Empathie, Normal, Sleep
+    work    - für Work, Meeting, Focus
 """
 
 from __future__ import annotations
@@ -69,9 +69,7 @@ class ProfileManager:
             ContextProfile.PRIVATE: ContextProfile(
                 ContextProfile.PRIVATE, stm_capacity
             ),
-            ContextProfile.WORK: ContextProfile(
-                ContextProfile.WORK, stm_capacity
-            ),
+            ContextProfile.WORK: ContextProfile(ContextProfile.WORK, stm_capacity),
         }
         self._active_name: str = ContextProfile.PRIVATE
 
@@ -112,13 +110,17 @@ class ProfileManager:
             Name des neuen Profils, wenn ein Wechsel stattgefunden hat,
             sonst None.
         """
-        target = ContextProfile.WORK if mode_name in _WORK_MODES else ContextProfile.PRIVATE
+        target = (
+            ContextProfile.WORK if mode_name in _WORK_MODES else ContextProfile.PRIVATE
+        )
         if target != self._active_name:
             old = self._active_name
             self._active_name = target
             logger.info(
                 "Kontextprofil gewechselt: %s → %s (Modus: %s).",
-                old, target, mode_name,
+                old,
+                target,
+                mode_name,
             )
             return target
         return None

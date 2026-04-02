@@ -1,4 +1,5 @@
-"""Tests for nova.security.encryption – SecurityManager."""
+"""Tests for nova.security.encryption - SecurityManager."""
+
 from __future__ import annotations
 
 

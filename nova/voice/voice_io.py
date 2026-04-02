@@ -1,5 +1,5 @@
 """
-Kapitel 15 – Sprachein- & -ausgabe (Voice)
+Kapitel 15 - Sprachein- & -ausgabe (Voice)
 
 Kapselt Text-to-Speech (TTS) und Speech-to-Text (STT).
 Nutzt pyttsx3 für TTS und SpeechRecognition für STT,
@@ -17,18 +17,20 @@ logger = logging.getLogger(__name__)
 # TTS
 try:
     import pyttsx3
+
     _TTS_AVAILABLE = True
 except ImportError:
     _TTS_AVAILABLE = False
-    logger.info("pyttsx3 nicht installiert – TTS deaktiviert.")
+    logger.info("pyttsx3 nicht installiert - TTS deaktiviert.")
 
 # STT
 try:
     import speech_recognition as sr
+
     _STT_AVAILABLE = True
 except ImportError:
     _STT_AVAILABLE = False
-    logger.info("SpeechRecognition nicht installiert – STT deaktiviert.")
+    logger.info("SpeechRecognition nicht installiert - STT deaktiviert.")
 
 
 class VoiceIO:
@@ -147,9 +149,7 @@ class VoiceIO:
                     self._recognizer.adjust_for_ambient_noise(source, duration=0.3)
                     logger.debug("Mikrofon aktiv, höre …")
                     audio = self._recognizer.listen(source, timeout=timeout)
-                text = self._recognizer.recognize_google(
-                    audio, language=self._language
-                )
+                text = self._recognizer.recognize_google(audio, language=self._language)
                 logger.debug("STT erkannt (Google): %r", text)
                 return text
             except Exception as exc:
@@ -160,7 +160,9 @@ class VoiceIO:
             try:
                 text = self._local_stt.recognize_from_mic(duration=timeout)
                 if text:
-                    logger.debug("STT erkannt (lokal/%s): %r", self._local_stt.backend_name, text)
+                    logger.debug(
+                        "STT erkannt (lokal/%s): %r", self._local_stt.backend_name, text
+                    )
                     return text
             except Exception as exc:
                 logger.debug("Lokales STT fehlgeschlagen: %s", exc)

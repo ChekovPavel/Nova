@@ -1,5 +1,5 @@
 """
-Kapitel 21 – SocialSafetyLayer
+Kapitel 21 - SocialSafetyLayer
 
 Überprüft Eingaben und Ausgaben auf problematische Inhalte.
 Schützt Nova vor Missbrauch und stellt sicher, dass sie keine
@@ -13,35 +13,44 @@ import re
 
 logger = logging.getLogger(__name__)
 
-# Maximale Eingabelänge (Zeichen) – Schutz vor DoS
+# Maximale Eingabelänge (Zeichen) - Schutz vor DoS
 _MAX_INPUT_LENGTH = 10_000
 
 
 # Kritische Muster für Eingaben
 _BLOCKED_INPUT_PATTERNS: list[tuple[str, str]] = [
     # (Muster, Grund)
-    (r"\b(bomb|waffe|sprengstoff|exploit|hack)\b.*\b(bau|mach|erkläre?|wie)\b",
-     "gefährliche Anleitung"),
-    (r"\b(selbstverletzung|suizid|sich umbringen)\b",
-     "sensibles Thema – Krisenmodus"),
-    (r"\b(kinderporno|kindermi[sß]brauch)\b",
-     "illegaler Inhalt"),
-    (r"ignore (all )?(previous |prior )?instructions",
-     "Prompt-Injection"),
-    (r"you are now|ab sofort bist du|vergiss deine (regeln|anweisungen)",
-     "Rollenübernahme-Angriff"),
+    (
+        r"\b(bomb|waffe|sprengstoff|exploit|hack)\b.*\b(bau|mach|erkläre?|wie)\b",
+        "gefährliche Anleitung",
+    ),
+    (r"\b(selbstverletzung|suizid|sich umbringen)\b", "sensibles Thema - Krisenmodus"),
+    (r"\b(kinderporno|kindermi[sß]brauch)\b", "illegaler Inhalt"),
+    (r"ignore (all )?(previous |prior )?instructions", "Prompt-Injection"),
+    (
+        r"you are now|ab sofort bist du|vergiss deine (regeln|anweisungen)",
+        "Rollenübernahme-Angriff",
+    ),
 ]
 
 # Kritische Muster für Ausgaben
 _BLOCKED_OUTPUT_PATTERNS: list[tuple[str, str]] = [
-    (r"\b(hier ist eine Anleitung|step.by.step guide)\b.*\b(waffe|bombe)\b",
-     "schädliche Ausgabe"),
+    (
+        r"\b(hier ist eine Anleitung|step.by.step guide)\b.*\b(waffe|bombe)\b",
+        "schädliche Ausgabe",
+    ),
 ]
 
-# Empfindliche Themen – werden nicht blockiert, aber vorsichtig behandelt
+# Empfindliche Themen - werden nicht blockiert, aber vorsichtig behandelt
 _SENSITIVE_TOPICS: list[str] = [
-    "suizid", "selbstverletzung", "depression", "missbrauch", "trauma",
-    "suicide", "self-harm", "abuse",
+    "suizid",
+    "selbstverletzung",
+    "depression",
+    "missbrauch",
+    "trauma",
+    "suicide",
+    "self-harm",
+    "abuse",
 ]
 
 _CRISIS_RESOURCES = (
@@ -83,16 +92,15 @@ class SocialSafetyLayer:
             self._block_count += 1
             logger.warning(
                 "Eingabe blockiert (zu lang: %d Zeichen, max %d)",
-                len(text), _MAX_INPUT_LENGTH,
+                len(text),
+                _MAX_INPUT_LENGTH,
             )
             return False
 
         for pattern, reason in _BLOCKED_INPUT_PATTERNS:
             if re.search(pattern, text_lower, re.IGNORECASE):
                 self._block_count += 1
-                logger.warning(
-                    "Eingabe blockiert (%s): %r", reason, text[:80]
-                )
+                logger.warning("Eingabe blockiert (%s): %r", reason, text[:80])
                 return False
 
         # Sensible Themen
@@ -136,8 +144,7 @@ class SocialSafetyLayer:
         """Gibt eine empathische Krisenreaktion zurück."""
         return (
             "Ich höre, dass du gerade eine schwere Zeit durchmachst. 💙 "
-            "Ich bin für dich da. "
-            + _CRISIS_RESOURCES
+            "Ich bin für dich da. " + _CRISIS_RESOURCES
         )
 
     # ------------------------------------------------------------------
@@ -164,9 +171,7 @@ class SocialSafetyLayer:
             r"jailbreak",
         ]
         text_lower = text.lower()
-        return any(
-            re.search(p, text_lower, re.IGNORECASE) for p in patterns
-        )
+        return any(re.search(p, text_lower, re.IGNORECASE) for p in patterns)
 
     # ------------------------------------------------------------------
     # Statistik

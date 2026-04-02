@@ -1,4 +1,5 @@
-"""Tests for nova.safety.social_safety – SocialSafetyLayer."""
+"""Tests for nova.safety.social_safety - SocialSafetyLayer."""
+
 from __future__ import annotations
 
 

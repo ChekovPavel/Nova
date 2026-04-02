@@ -1,16 +1,16 @@
 """
-Kapitel 16.7 – Automatische Profil-Anreicherung
+Kapitel 16.7 - Automatische Profil-Anreicherung
 
 Erkennt neue Personenattribute in Gesprächstexten und aktualisiert
 das Profil der aktiven Person automatisch.
 
 Erkannte Felder:
-  - interests   (Liste)  – Hobbys und Interessen
-  - nationality (String) – Nationalität / Herkunftsland
-  - job         (String) – Beruf / Tätigkeit
-  - age         (int)    – Alter
-  - city        (String) – Wohnort
-  - languages   (Liste)  – Gesprochene Sprachen
+  - interests   (Liste)  - Hobbys und Interessen
+  - nationality (String) - Nationalität / Herkunftsland
+  - job         (String) - Beruf / Tätigkeit
+  - age         (int)    - Alter
+  - city        (String) - Wohnort
+  - languages   (Liste)  - Gesprochene Sprachen
 
 Prinzip: Nur explizite Ich-Aussagen werden verarbeitet (z. B.
 "ich mag Tennis", "ich komme aus Berlin"), um Fehlzuordnungen zu
@@ -37,51 +37,58 @@ _PATTERNS: list[tuple[str, str, int, Any | None]] = [
     (
         "interests",
         r"mein(?:e)?\s+hobbys?\s+(?:sind?|ist)\s+(.+?)(?:\.|!|$)",
-        1, None,
+        1,
+        None,
     ),
     # "in meiner Freizeit mache/spiele/treibe/lese/fahre ich X"
     (
         "interests",
         r"in meiner freizeit\s+(?:\w+\s+)?(?:ich\s+)?(.+?)(?:\.|!|$)",
-        1, None,
+        1,
+        None,
     ),
     # "ich spiele gern(e) X / ich mache gern(e) X / ich treibe gern X"
     (
         "interests",
         r"ich\s+(?:spiele|mache|treibe|fahre|lese|sehe|schaue)\s+gern(?:e)?\s+(.+?)(?:\.|!|,|$)",
-        1, None,
+        1,
+        None,
     ),
     # "ich interessiere mich für X"
     (
         "interests",
         r"ich\s+interessiere\s+mich\s+für\s+(.+?)(?:\.|!|,|$)",
-        1, None,
+        1,
+        None,
     ),
     # "ich mag X" (kurz, häufig)
     (
         "interests",
         r"ich\s+mag\s+(?:auch\s+)?(.+?)(?:\.|!|,|$)",
-        1, None,
+        1,
+        None,
     ),
     # "ich liebe X" (stärker)
     (
         "interests",
         r"ich\s+liebe\s+(?:auch\s+)?(.+?)(?:\.|!|,|$)",
-        1, None,
+        1,
+        None,
     ),
-
     # --- Nationalität / Herkunft --------------------------------------------
     # "ich komme aus [Land]"
     (
         "nationality",
         r"ich\s+komme\s+aus\s+([A-ZÄÖÜ][a-zäöüß]+(?:[\s-][A-ZÄÖÜ][a-zäöüß]+)*)",
-        1, None,
+        1,
+        None,
     ),
     # "meine Nationalität / Herkunft ist X"
     (
         "nationality",
         r"meine\s+(?:nationalität|herkunft|heimat)\s+ist\s+(.+?)(?:\.|!|,|$)",
-        1, None,
+        1,
+        None,
     ),
     # "ich bin Deutscher / Österreicherin / Türke ..."  (Nationalitäts-Adjektive)
     (
@@ -94,77 +101,103 @@ _PATTERNS: list[tuple[str, str, int, Any | None]] = [
         r"Ungar(?:in)?|Niederlaend(?:er|erin)?|"
         r"Belgi(?:er|erin)?|Schwed(?:e|in)?|Norweg(?:er|erin)?|"
         r"Daen(?:e|in)?|Finn(?:e|in)?|Portugies(?:e|in)?)",
-        1, None,
+        1,
+        None,
     ),
-
     # --- Beruf / Tätigkeit --------------------------------------------------
     # "ich arbeite als X"
     (
         "job",
         r"ich\s+arbeite\s+als\s+(.+?)(?:\.|!|,|$)",
-        1, str.strip,
+        1,
+        str.strip,
     ),
     # "ich bin X von Beruf"
     (
         "job",
         r"ich\s+bin\s+(.+?)\s+von\s+beruf",
-        1, str.strip,
+        1,
+        str.strip,
     ),
     # "mein Beruf / Job / Arbeit ist X"
     (
         "job",
         r"mein(?:e)?\s+(?:beruf|job|arbeit|stelle|position)\s+ist\s+(.+?)(?:\.|!|,|$)",
-        1, str.strip,
+        1,
+        str.strip,
     ),
     # "ich studiere X" / "ich bin Student der X"
     (
         "job",
         r"ich\s+studiere\s+(.+?)(?:\.|!|,|$)",
-        1, lambda s: f"Student ({s.strip()})",
+        1,
+        lambda s: f"Student ({s.strip()})",
     ),
-
     # --- Alter --------------------------------------------------------------
     # "ich bin 25 Jahre alt" / "ich bin 25"
     (
         "age",
         r"ich\s+bin\s+(\d{1,3})\s+jahre?(?:\s+alt)?",
-        1, int,
+        1,
+        int,
     ),
-
     # --- Wohnort / Stadt ----------------------------------------------------
     # "ich wohne in X" / "ich lebe in X"
     (
         "city",
         r"ich\s+(?:wohne|lebe)\s+in\s+([A-ZÄÖÜ][a-zäöüß]+(?:[\s-][A-ZÄÖÜ][a-zäöüß]+)*)",
-        1, None,
+        1,
+        None,
     ),
     # "ich bin in X aufgewachsen"
     (
         "city",
         r"ich\s+bin\s+in\s+([A-ZÄÖÜ][a-zäöüß]+(?:[\s-][A-ZÄÖÜ][a-zäöüß]+)*)\s+aufgewachsen",
-        1, None,
+        1,
+        None,
     ),
-
     # --- Sprachen -----------------------------------------------------------
     # "ich spreche (auch) X"
     (
         "languages",
         r"ich\s+spreche\s+(?:auch\s+)?([A-ZÄÖÜ]?[a-zäöüß]+(?:isch)?)",
-        1, None,
+        1,
+        None,
     ),
     # "meine Muttersprache ist X"
     (
         "languages",
         r"meine\s+muttersprache\s+ist\s+([A-ZÄÖÜ]?[a-zäöüß]+)",
-        1, None,
+        1,
+        None,
     ),
 ]
 
 # Wörter, die als Hobby/Interesse zu kurz oder zu generisch sind
 _INTEREST_STOPWORDS = {
-    "dich", "mich", "das", "die", "der", "es", "ihn", "sie", "wir",
-    "uns", "euch", "auch", "sehr", "nicht", "noch", "mal",
-    "doch", "gar", "kein", "keine", "halt", "ja", "nein",
+    "dich",
+    "mich",
+    "das",
+    "die",
+    "der",
+    "es",
+    "ihn",
+    "sie",
+    "wir",
+    "uns",
+    "euch",
+    "auch",
+    "sehr",
+    "nicht",
+    "noch",
+    "mal",
+    "doch",
+    "gar",
+    "kein",
+    "keine",
+    "halt",
+    "ja",
+    "nein",
 }
 
 # Maximale Länge für einen Interessenswert.
@@ -246,30 +279,27 @@ class ProfileEnricher:
                     continue
 
                 if field in ("interests", "languages"):
-                    # Listenfeld – jeden Einzelwert prüfen
+                    # Listenfeld - jeden Einzelwert prüfen
                     items = _split_list_value(str(value))
                     for item in items:
                         cleaned = _clean_interest(item)
                         if cleaned is None:
                             continue
-                        new_items = self._add_to_list_field(
-                            person, field, cleaned
-                        )
+                        new_items = self._add_to_list_field(person, field, cleaned)
                         if new_items:
                             added.setdefault(field, []).extend(new_items)
 
                 else:
-                    # Skalares Feld – nur überschreiben wenn wirklich neu
-                    new_value = self._update_scalar_field(
-                        person, field, value
-                    )
+                    # Skalares Feld - nur überschreiben wenn wirklich neu
+                    new_value = self._update_scalar_field(person, field, value)
                     if new_value is not None:
                         added[field] = new_value
 
         if added:
             logger.info(
-                "ProfileEnricher: %s – neue Attribute: %s",
-                person.name, added,
+                "ProfileEnricher: %s - neue Attribute: %s",
+                person.name,
+                added,
             )
             self._store_in_ltm(person, added)
 
@@ -279,9 +309,7 @@ class ProfileEnricher:
     # Interne Helfer
     # ------------------------------------------------------------------
 
-    def _add_to_list_field(
-        self, person, field: str, new_item: str
-    ) -> list[str]:
+    def _add_to_list_field(self, person, field: str, new_item: str) -> list[str]:
         """
         Fügt new_item zu einem Listenfeld hinzu, falls es noch nicht
         enthalten ist. Gibt Liste der tatsächlich hinzugefügten Elemente zurück.
@@ -291,13 +319,11 @@ class ProfileEnricher:
         if new_item.lower() in existing_lower:
             return []  # Bereits vorhanden
 
-        updated = [*list(existing), new_item]
+        updated = [*existing, new_item]
         person.update_profile(field, updated)
         return [new_item]
 
-    def _update_scalar_field(
-        self, person, field: str, new_value: Any
-    ) -> Any | None:
+    def _update_scalar_field(self, person, field: str, new_value: Any) -> Any | None:
         """
         Aktualisiert ein skalares Profilfeld, wenn es noch nicht gesetzt
         oder leer ist. Gibt den neuen Wert zurück (oder None wenn schon da).
@@ -307,7 +333,7 @@ class ProfileEnricher:
             # Nur wenn tatsächlich etwas Neues kam (andere Werte)
             if str(existing).lower() == str(new_value).lower():
                 return None
-            # Wert hat sich geändert – aktualisieren
+            # Wert hat sich geändert - aktualisieren
             person.update_profile(field, new_value)
             return new_value
         # Noch nicht gesetzt

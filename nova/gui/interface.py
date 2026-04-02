@@ -1,5 +1,5 @@
 """
-Kapitel 17 – GUI / Interface
+Kapitel 17 - GUI / Interface
 
 Tkinter-basierte grafische Benutzeroberfläche für Nova.
 Fällt auf Konsolenmodus zurück, wenn Tkinter nicht verfügbar ist.
@@ -15,11 +15,12 @@ logger = logging.getLogger(__name__)
 
 try:
     import tkinter as tk
-    from tkinter import scrolledtext, ttk
+    from tkinter import scrolledtext
+
     _TK_AVAILABLE = True
 except ImportError:
     _TK_AVAILABLE = False
-    logger.info("Tkinter nicht verfügbar – GUI deaktiviert.")
+    logger.info("Tkinter nicht verfügbar - GUI deaktiviert.")
 
 
 class NovaGUI:
@@ -50,7 +51,7 @@ class NovaGUI:
             return
 
         self._root = tk.Tk()
-        self._root.title("Nova – Persönlicher KI-Assistent")
+        self._root.title("Nova - Persönlicher KI-Assistent")
         self._root.geometry("700x520")
         self._root.configure(bg="#1e1e2e")
         self._root.resizable(True, True)
@@ -71,16 +72,20 @@ class NovaGUI:
         header = tk.Frame(root, bg="#313244", height=48)
         header.pack(fill=tk.X)
         tk.Label(
-            header, text="🌟 Nova",
+            header,
+            text="🌟 Nova",
             font=("Segoe UI", 16, "bold"),
-            fg="#cdd6f4", bg="#313244",
+            fg="#cdd6f4",
+            bg="#313244",
         ).pack(side=tk.LEFT, padx=16, pady=8)
 
         self._status_var = tk.StringVar(value="Bereit | Modus: normal")
         tk.Label(
-            header, textvariable=self._status_var,
+            header,
+            textvariable=self._status_var,
             font=("Segoe UI", 10),
-            fg="#a6adc8", bg="#313244",
+            fg="#a6adc8",
+            bg="#313244",
         ).pack(side=tk.RIGHT, padx=16)
 
         # --- Chat-Bereich ---
@@ -118,7 +123,9 @@ class NovaGUI:
             insertbackground="#cdd6f4",
             relief=tk.FLAT,
         )
-        self._input_field.pack(side=tk.LEFT, fill=tk.X, expand=True, ipady=8, padx=(0, 8))
+        self._input_field.pack(
+            side=tk.LEFT, fill=tk.X, expand=True, ipady=8, padx=(0, 8)
+        )
         self._input_field.bind("<Return>", self._on_send)
         self._input_field.focus()
 

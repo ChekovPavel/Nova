@@ -1,7 +1,9 @@
-"""Tests for nova.memory – ShortTermMemory and LongTermMemory."""
+"""Tests for nova.memory - ShortTermMemory and LongTermMemory."""
+
 from __future__ import annotations
 
 # ── ShortTermMemory ──────────────────────────────────────────────────────────
+
 
 class TestSTMBasic:
     """ShortTermMemory add/get operations."""
@@ -42,6 +44,7 @@ class TestSTMBasic:
 
 
 # ── LongTermMemory ───────────────────────────────────────────────────────────
+
 
 class TestLTMStore:
     """LongTermMemory store and recall."""

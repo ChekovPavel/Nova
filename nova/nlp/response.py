@@ -1,5 +1,5 @@
 """
-Kapitel 4 – Antwortgenerierung
+Kapitel 4 - Antwortgenerierung
 
 Erstellt Novas Antworten auf Basis von:
 - Intent des NLP-Ergebnisses
@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import logging
 import random
-from typing import Any
+from typing import Any, ClassVar
 
 logger = logging.getLogger(__name__)
 
@@ -26,14 +26,19 @@ class ResponseGenerator:
 
     Strategie:
     1. SocialSafetyLayer prüft Eingabe und Ausgabe
-    2. Ollama (lokales LLM) wird bevorzugt genutzt – für alle Intents
+    2. Ollama (lokales LLM) wird bevorzugt genutzt - für alle Intents
     3. Fallback: regelbasierte Antworten (keine LLM nötig)
     4. Persönlichkeitsstil und Emotionszustand werden eingebaut
     5. Externer LLM-Client als letzter Fallback (z. B. OpenAI)
     """
 
     # Intents, die immer regelbasiert beantwortet werden (kein LLM nötig)
-    _RULE_ONLY_INTENTS = {"greeting", "farewell", "thanks", "mode_change"}
+    _RULE_ONLY_INTENTS: ClassVar[set[str]] = {
+        "greeting",
+        "farewell",
+        "thanks",
+        "mode_change",
+    }
 
     def __init__(
         self,
@@ -48,7 +53,7 @@ class ResponseGenerator:
         self._emotion = emotion
         self._context = context_manager
         self._safety = social_safety
-        self._llm = llm_client        # externer LLM (OpenAI-kompatibel)
+        self._llm = llm_client  # externer LLM (OpenAI-kompatibel)
         self._ollama = ollama_client  # lokales LLM (Ollama)
 
     # ------------------------------------------------------------------
@@ -143,9 +148,7 @@ class ResponseGenerator:
         mood = self._emotion.mood_modifier()
         parts.append(f"Deine aktuelle Stimmung: {mood}.")
         style = self._personality.communication_style()
-        parts.append(
-            f"Kommunikationsstil: {style['tone']}, {style['verbosity']}."
-        )
+        parts.append(f"Kommunikationsstil: {style['tone']}, {style['verbosity']}.")
         # LTM-Kontext
         if extra_context and extra_context.get("ltm"):
             ltm_items = extra_context["ltm"][:2]
@@ -158,26 +161,24 @@ class ResponseGenerator:
     # Regelbasierte Antworten
     # ------------------------------------------------------------------
 
-    _GREETINGS = [
+    _GREETINGS: ClassVar[list[str]] = [
         "Hallo! Schön, dass du da bist. 😊",
         "Hi! Wie kann ich dir helfen?",
         "Hey! Was gibt's?",
         "Guten Tag! Womit darf ich dienen?",
     ]
-    _FAREWELLS = [
+    _FAREWELLS: ClassVar[list[str]] = [
         "Tschüss! Bis bald. 👋",
         "Auf Wiedersehen! Ich freue mich auf unser nächstes Gespräch.",
         "Machs gut! Ich bin immer für dich da.",
     ]
-    _THANKS_RESPONSES = [
+    _THANKS_RESPONSES: ClassVar[list[str]] = [
         "Gern geschehen! 😊",
         "Immer wieder! Dafür bin ich hier.",
         "Kein Problem!",
     ]
 
-    def _rule_based_response(
-        self, nlp_result, extra_context: dict
-    ) -> str:
+    def _rule_based_response(self, nlp_result, extra_context: dict) -> str:
         intent = nlp_result.intent
         slots = nlp_result.slots
         person = self._context.get_active_person()
@@ -196,8 +197,7 @@ class ResponseGenerator:
         if intent == "store_memory":
             content = slots.get("memory_content", nlp_result.raw_text)
             return (
-                f'Ich habe mir gemerkt: "{content}". '
-                "Du kannst jederzeit danach fragen."
+                f'Ich habe mir gemerkt: "{content}". Du kannst jederzeit danach fragen.'
             )
 
         if intent == "recall_memory":
@@ -242,15 +242,14 @@ class ResponseGenerator:
         text_lower = text.lower()
         if any(w in text_lower for w in ["traurig", "sad", "schlimm"]):
             return (
-                "Das tut mir leid zu hören. 💙 Ich bin für dich da – "
+                "Das tut mir leid zu hören. 💙 Ich bin für dich da - "
                 "möchtest du darüber sprechen?"
             )
         if any(w in text_lower for w in ["glücklich", "happy", "freude", "toll"]):
             return "Das freut mich sehr! 😊 Erzähl mir mehr davon!"
         if any(w in text_lower for w in ["wütend", "angry", "ärger"]):
             return (
-                "Ich verstehe, dass dich das wütend macht. "
-                "Lass es raus – ich höre zu."
+                "Ich verstehe, dass dich das wütend macht. Lass es raus - ich höre zu."
             )
         return "Ich fühle mit dir. Wie geht es dir gerade genau?"
 

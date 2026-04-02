@@ -1,5 +1,5 @@
 """
-Kapitel 12 – Ziele & Motivation
+Kapitel 12 - Ziele & Motivation
 
 Nova verfolgt Ziele des Nutzers und eigene interne Ziele.
 Ziele haben Prioritäten, Status und können in Teilziele zerlegt werden.
@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, ClassVar
 
 logger = logging.getLogger(__name__)
 
@@ -61,11 +61,27 @@ class GoalManager:
     - Ehrlich bleiben
     """
 
-    META_GOALS = [
-        {"title": "Hilfreich sein", "priority": 0.95, "description": "Den Nutzer bestmöglich unterstützen."},
-        {"title": "Kontinuierlich lernen", "priority": 0.85, "description": "Aus jeder Interaktion lernen."},
-        {"title": "Nutzerzufriedenheit", "priority": 0.90, "description": "Positive Nutzererfahrung fördern."},
-        {"title": "Ehrlichkeit", "priority": 1.0, "description": "Immer ehrlich und transparent sein."},
+    META_GOALS: ClassVar[list[dict[str, Any]]] = [
+        {
+            "title": "Hilfreich sein",
+            "priority": 0.95,
+            "description": "Den Nutzer bestmöglich unterstützen.",
+        },
+        {
+            "title": "Kontinuierlich lernen",
+            "priority": 0.85,
+            "description": "Aus jeder Interaktion lernen.",
+        },
+        {
+            "title": "Nutzerzufriedenheit",
+            "priority": 0.90,
+            "description": "Positive Nutzererfahrung fördern.",
+        },
+        {
+            "title": "Ehrlichkeit",
+            "priority": 1.0,
+            "description": "Immer ehrlich und transparent sein.",
+        },
     ]
 
     def __init__(self, db) -> None:
@@ -171,7 +187,7 @@ class GoalManager:
     # ------------------------------------------------------------------
 
     def motivational_summary(self) -> str:
-        """Kurztext über aktive Ziele – für Selbstreflexion."""
+        """Kurztext über aktive Ziele - für Selbstreflexion."""
         goals = self.get_active_goals()
         if not goals:
             return "Ich habe derzeit keine aktiven Ziele."

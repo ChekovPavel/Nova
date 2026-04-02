@@ -1,5 +1,5 @@
 """
-Kapitel 9 – Langzeitgedächtnis (LTM)
+Kapitel 9 - Langzeitgedächtnis (LTM)
 
 Das LTM speichert Erinnerungen dauerhaft in der Datenbank.
 Wichtige Inhalte können verschlüsselt abgelegt werden.
@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, ClassVar
 
 logger = logging.getLogger(__name__)
 
@@ -22,16 +22,16 @@ def _now_iso() -> str:
 class LongTermMemory:
     """Persistentes Langzeitgedächtnis für Nova."""
 
-    CATEGORIES = {
-        "fact",        # allgemeines Faktenwissen
-        "event",       # erlebte Ereignisse
-        "person",      # Wissen über Personen
-        "emotion",     # emotionale Erinnerungen
-        "goal",        # zielrelevante Inhalte
+    CATEGORIES: ClassVar[set[str]] = {
+        "fact",  # allgemeines Faktenwissen
+        "event",  # erlebte Ereignisse
+        "person",  # Wissen über Personen
+        "emotion",  # emotionale Erinnerungen
+        "goal",  # zielrelevante Inhalte
         "preference",  # Vorlieben und Abneigungen
-        "skill",       # erlernte Fähigkeiten
-        "meeting",     # Besprechungs-Zusammenfassungen
-        "general",     # sonstige Inhalte
+        "skill",  # erlernte Fähigkeiten
+        "meeting",  # Besprechungs-Zusammenfassungen
+        "general",  # sonstige Inhalte
     }
 
     def __init__(self, db, security) -> None:
@@ -56,7 +56,7 @@ class LongTermMemory:
         Args:
             content:    Inhalt der Erinnerung.
             category:   Kategorie (siehe CATEGORIES).
-            importance: Wichtigkeit 0.0–1.0.
+            importance: Wichtigkeit 0.0-1.0.
             tags:       Optionale Schlagwörter.
             encrypt:    Wenn True, wird der Inhalt verschlüsselt.
 
@@ -66,9 +66,7 @@ class LongTermMemory:
         if category not in self.CATEGORIES:
             category = "general"
 
-        stored_content = (
-            self._security.encrypt(content) if encrypt else content
-        )
+        stored_content = self._security.encrypt(content) if encrypt else content
         row = {
             "category": category,
             "content": stored_content,
@@ -126,9 +124,7 @@ class LongTermMemory:
 
         if profile_tag:
             # Erinnerungen mit passendem Profil-Tag ODER ohne jeglichen Profil-Tag
-            sql_parts.append(
-                "AND (tags LIKE ? OR tags NOT LIKE '%profile:%')"
-            )
+            sql_parts.append("AND (tags LIKE ? OR tags NOT LIKE '%profile:%')")
             params.append(f"%{profile_tag}%")
 
         sql_parts.append("ORDER BY importance DESC, access_count DESC LIMIT ?")
@@ -152,9 +148,7 @@ class LongTermMemory:
 
     def recall_by_id(self, memory_id: int) -> dict[str, Any] | None:
         """Gibt eine einzelne Erinnerung anhand ihrer ID zurück."""
-        row = self._db.fetchone(
-            "SELECT * FROM memories WHERE id=?", (memory_id,)
-        )
+        row = self._db.fetchone("SELECT * FROM memories WHERE id=?", (memory_id,))
         if not row:
             return None
         entry = dict(row)

@@ -1,8 +1,8 @@
 """
-Kapitel 24 – Lokales LLM via Ollama
+Kapitel 24 - Lokales LLM via Ollama
 
 Ollama stellt einen OpenAI-kompatiblen REST-Endpunkt lokal bereit.
-Empfohlene Modelle für Raspberry Pi 4B+ (4–8 GB RAM):
+Empfohlene Modelle für Raspberry Pi 4B+ (4-8 GB RAM):
   - llama3.2:1b   (~700 MB, sehr schnell)
   - llama3.2:3b   (~2 GB, gute Qualität)
   - phi3.5:mini   (~2.2 GB, Microsoft-Modell, sehr effizient)
@@ -14,7 +14,7 @@ Ollama installieren (Pi/Linux):
     ollama pull llama3.2:1b      # Modell herunterladen
 
 Ollama läuft dann auf http://localhost:11434 und bietet
-eine OpenAI-kompatible API – Nova nutzt das direkt.
+eine OpenAI-kompatible API - Nova nutzt das direkt.
 """
 
 from __future__ import annotations
@@ -96,7 +96,7 @@ class OllamaClient:
 
         messages = [{"role": "system", "content": system}]
         if history:
-            messages.extend(history[-self.context_messages:])
+            messages.extend(history[-self.context_messages :])
         messages.append({"role": "user", "content": user_input})
 
         payload = {

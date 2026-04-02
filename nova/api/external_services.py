@@ -1,12 +1,12 @@
 """
-Kapitel 20 – API / Externe Dienste
+Kapitel 20 - API / Externe Dienste
 
 Ermöglicht Nova die Kommunikation mit externen APIs:
 - LLM-Backend (OpenAI-kompatibel)
 - Wetter-API
 - Generische HTTP-Anfragen
 
-Alle Anfragen sind optional – Nova funktioniert auch offline.
+Alle Anfragen sind optional - Nova funktioniert auch offline.
 """
 
 from __future__ import annotations
@@ -116,12 +116,14 @@ class ExternalServices:
         if not self._enabled or not self._weather_api_key:
             return None
 
-        params = urllib.parse.urlencode({
-            "q": city,
-            "appid": self._weather_api_key,
-            "units": "metric",
-            "lang": "de",
-        })
+        params = urllib.parse.urlencode(
+            {
+                "q": city,
+                "appid": self._weather_api_key,
+                "units": "metric",
+                "lang": "de",
+            }
+        )
         url = f"https://api.openweathermap.org/data/2.5/weather?{params}"
         try:
             data = self._get_json(url)
@@ -138,7 +140,9 @@ class ExternalServices:
     # ------------------------------------------------------------------
 
     def _get_json(
-        self, url: str, max_retries: int = _MAX_RETRIES,
+        self,
+        url: str,
+        max_retries: int = _MAX_RETRIES,
     ) -> dict | None:
         """Führt eine GET-Anfrage aus und gibt JSON zurück (mit Retry)."""
         for attempt in range(max_retries):
@@ -148,17 +152,21 @@ class ExternalServices:
                     return json.loads(resp.read().decode())
             except urllib.error.URLError as exc:
                 if attempt < max_retries - 1:
-                    wait = _BACKOFF_BASE ** attempt
+                    wait = _BACKOFF_BASE**attempt
                     logger.warning(
                         "HTTP GET Versuch %d/%d fehlgeschlagen, "
                         "erneuter Versuch in %ds: %s",
-                        attempt + 1, max_retries, wait, exc,
+                        attempt + 1,
+                        max_retries,
+                        wait,
+                        exc,
                     )
                     time.sleep(wait)
                 else:
                     logger.error(
                         "HTTP GET fehlgeschlagen nach %d Versuchen: %s",
-                        max_retries, exc,
+                        max_retries,
+                        exc,
                     )
         return None
 
@@ -184,22 +192,26 @@ class ExternalServices:
                     return json.loads(resp.read().decode())
             except urllib.error.URLError as exc:
                 if attempt < max_retries - 1:
-                    wait = _BACKOFF_BASE ** attempt
+                    wait = _BACKOFF_BASE**attempt
                     logger.warning(
                         "HTTP POST Versuch %d/%d fehlgeschlagen, "
                         "erneuter Versuch in %ds: %s",
-                        attempt + 1, max_retries, wait, exc,
+                        attempt + 1,
+                        max_retries,
+                        wait,
+                        exc,
                     )
                     time.sleep(wait)
                 else:
                     logger.error(
                         "HTTP POST fehlgeschlagen nach %d Versuchen: %s",
-                        max_retries, exc,
+                        max_retries,
+                        exc,
                     )
         return None
 
     # ------------------------------------------------------------------
-    # Kalender-Integration (Stub – Google Calendar / iCal)
+    # Kalender-Integration (Stub - Google Calendar / iCal)
     # ------------------------------------------------------------------
 
     def get_calendar_events(
@@ -210,7 +222,7 @@ class ExternalServices:
         """
         Ruft Kalendereinträge ab.
 
-        Aktuell ein Stub – wird erweitert, sobald eine Calendar-API
+        Aktuell ein Stub - wird erweitert, sobald eine Calendar-API
         konfiguriert ist (``calendar_endpoint`` + ``calendar_api_key``
         in der Konfiguration).
 
@@ -251,7 +263,7 @@ class ExternalServices:
         """
         Erstellt einen Kalendereintrag.
 
-        Aktuell ein Stub – sendet eine POST-Anfrage, falls
+        Aktuell ein Stub - sendet eine POST-Anfrage, falls
         ``calendar_endpoint`` konfiguriert ist.
 
         Args:
@@ -269,7 +281,7 @@ class ExternalServices:
         calendar_endpoint = getattr(self, "_calendar_endpoint", None)
         url = calendar_url or calendar_endpoint
         if not url:
-            logger.info("Keine Kalender-API konfiguriert – Termin nicht erstellt.")
+            logger.info("Keine Kalender-API konfiguriert - Termin nicht erstellt.")
             return None
         payload = {
             "summary": title,

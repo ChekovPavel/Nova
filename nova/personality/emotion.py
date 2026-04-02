@@ -1,5 +1,5 @@
 """
-Kapitel 7 – Emotionsschicht
+Kapitel 7 - Emotionsschicht
 
 Novas Emotionen basieren auf dem Valence-Arousal-Dominance-Modell (VAD).
 Der aktuelle Emotionszustand beeinflusst Ton und Inhalte von Antworten.
@@ -11,38 +11,40 @@ from __future__ import annotations
 import logging
 import time
 from dataclasses import dataclass, field
+from typing import ClassVar
 
 logger = logging.getLogger(__name__)
 
 # Emotions-Bibliothek: Name → (valence, arousal, dominance)
 # Skala je -1.0 bis +1.0
 EMOTION_VECTORS: dict[str, tuple[float, float, float]] = {
-    "joy":        ( 0.80,  0.50,  0.40),
-    "excitement": ( 0.70,  0.80,  0.50),
-    "calm":       ( 0.40,  -0.30,  0.20),
-    "neutral":    ( 0.00,  0.00,  0.00),
-    "curiosity":  ( 0.50,  0.40,  0.30),
-    "sadness":    (-0.60,  -0.40, -0.20),
-    "frustration":(-0.50,  0.40, -0.30),
-    "anger":      (-0.70,  0.80, -0.40),
-    "anxiety":    (-0.40,  0.60, -0.50),
-    "surprise":   ( 0.20,  0.70,  0.00),
-    "empathy":    ( 0.60,  0.10,  0.20),
-    "boredom":    (-0.20,  -0.50, -0.10),
+    "joy": (0.80, 0.50, 0.40),
+    "excitement": (0.70, 0.80, 0.50),
+    "calm": (0.40, -0.30, 0.20),
+    "neutral": (0.00, 0.00, 0.00),
+    "curiosity": (0.50, 0.40, 0.30),
+    "sadness": (-0.60, -0.40, -0.20),
+    "frustration": (-0.50, 0.40, -0.30),
+    "anger": (-0.70, 0.80, -0.40),
+    "anxiety": (-0.40, 0.60, -0.50),
+    "surprise": (0.20, 0.70, 0.00),
+    "empathy": (0.60, 0.10, 0.20),
+    "boredom": (-0.20, -0.50, -0.10),
 }
 
-_DECAY_RATE = 0.05      # Decay pro Sekunde (Richtung neutral)
+_DECAY_RATE = 0.05  # Decay pro Sekunde (Richtung neutral)
 _DECAY_INTERVAL = 10.0  # Decay-Berechnung alle N Sekunden
 
 
 @dataclass
 class EmotionState:
     """Aktueller Emotionszustand im VAD-Raum."""
-    valence: float = 0.0    # -1 (negativ) bis +1 (positiv)
-    arousal: float = 0.0    # -1 (schläfrig) bis +1 (aufgewühlt)
+
+    valence: float = 0.0  # -1 (negativ) bis +1 (positiv)
+    arousal: float = 0.0  # -1 (schläfrig) bis +1 (aufgewühlt)
     dominance: float = 0.0  # -1 (unterwürfig) bis +1 (dominant)
     label: str = "neutral"
-    intensity: float = 0.0  # 0.0–1.0
+    intensity: float = 0.0  # 0.0-1.0
     history: list[str] = field(default_factory=list)
     last_update: float = field(default_factory=time.monotonic)
 
@@ -76,7 +78,7 @@ class EmotionEngine:
 
         Args:
             emotion:   Name der Emotion (aus EMOTION_VECTORS).
-            intensity: Stärke 0.0–1.0.
+            intensity: Stärke 0.0-1.0.
             source:    Ursache der Emotion (für Log/Verlauf).
 
         Returns:
@@ -93,8 +95,8 @@ class EmotionEngine:
 
         # Mische neue Emotion in Zustand (gewichteter Durchschnitt)
         blend = 0.4 * alpha
-        self._state.valence   = self._state.valence   * (1 - blend) + v * blend
-        self._state.arousal   = self._state.arousal   * (1 - blend) + a * blend
+        self._state.valence = self._state.valence * (1 - blend) + v * blend
+        self._state.arousal = self._state.arousal * (1 - blend) + a * blend
         self._state.dominance = self._state.dominance * (1 - blend) + d * blend
         self._state.intensity = alpha
         self._state.label = emotion
@@ -105,8 +107,11 @@ class EmotionEngine:
 
         logger.debug(
             "Emotion: %s (I=%.2f) | VAD=(%.2f, %.2f, %.2f)",
-            emotion, alpha,
-            self._state.valence, self._state.arousal, self._state.dominance,
+            emotion,
+            alpha,
+            self._state.valence,
+            self._state.arousal,
+            self._state.dominance,
         )
         return self._state
 
@@ -114,7 +119,7 @@ class EmotionEngine:
     # Text-basierter Emotionserkenner (einfaches Keyword-Mapping)
     # ------------------------------------------------------------------
 
-    _KEYWORD_MAP: dict[str, str] = {
+    _KEYWORD_MAP: ClassVar[dict[str, str]] = {
         "toll|super|klasse|freue|danke|schön|liebe": "joy",
         "traurig|schlimm|schrecklich|weine|verloren": "sadness",
         "wütend|scheiße|hass|furchtbar|Ärger": "anger",
@@ -127,6 +132,7 @@ class EmotionEngine:
     def detect_from_text(self, text: str) -> str | None:
         """Einfache Schlüsselworterkennung für die Emotion im Text."""
         import re
+
         text_lower = text.lower()
         for pattern, emotion in self._KEYWORD_MAP.items():
             if re.search(pattern, text_lower):
@@ -144,10 +150,10 @@ class EmotionEngine:
         Reagiert auf einen numerischen Sentiment-Wert aus dem NLP-Prozessor.
 
         Mapping:
-            sentiment >  0.50  → joy          (intensity × 1.2)
-            sentiment >  0.15  → curiosity    (intensity × 0.8)
-            sentiment < -0.50  → sadness      (intensity × 1.2)
-            sentiment < -0.15  → frustration  (intensity × 0.8)
+            sentiment >  0.50  → joy          (intensity x 1.2)
+            sentiment >  0.15  → curiosity    (intensity x 0.8)
+            sentiment < -0.50  → sadness      (intensity x 1.2)
+            sentiment < -0.15  → frustration  (intensity x 0.8)
             |sentiment| ≤ 0.15 → keine Reaktion (neutraler Bereich)
 
         Args:
@@ -177,10 +183,10 @@ class EmotionEngine:
         self._last_decay = now
 
         decay = min(_DECAY_RATE * dt, 0.3)
-        self._state.valence   *= (1 - decay)
-        self._state.arousal   *= (1 - decay)
-        self._state.dominance *= (1 - decay)
-        self._state.intensity  = max(0.0, self._state.intensity - decay)
+        self._state.valence *= 1 - decay
+        self._state.arousal *= 1 - decay
+        self._state.dominance *= 1 - decay
+        self._state.intensity = max(0.0, self._state.intensity - decay)
 
         if abs(self._state.valence) < 0.05 and abs(self._state.arousal) < 0.05:
             self._state.label = "neutral"

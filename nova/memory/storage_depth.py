@@ -1,5 +1,5 @@
 """
-Kapitel 22 – SpeicherTiefe-System
+Kapitel 22 - SpeicherTiefe-System
 
 Entscheidet, ob ein Inhalt ins STM, LTM oder beide Speicher geschrieben
 wird.  Die Tiefe richtet sich nach Wichtigkeit, Emotionalität und
@@ -14,9 +14,9 @@ from typing import Any
 logger = logging.getLogger(__name__)
 
 # Schwellenwerte
-_LTM_IMPORTANCE_THRESHOLD = 0.6   # ab hier → LTM
-_STM_ONLY_THRESHOLD = 0.3         # darunter → STM only (wird vergessen)
-_EMOTIONAL_BOOST = 0.2            # emotionaler Inhalt wird wichtiger
+_LTM_IMPORTANCE_THRESHOLD = 0.6  # ab hier → LTM
+_STM_ONLY_THRESHOLD = 0.3  # darunter → STM only (wird vergessen)
+_EMOTIONAL_BOOST = 0.2  # emotionaler Inhalt wird wichtiger
 
 
 class StorageDepth:
@@ -59,7 +59,7 @@ class StorageDepth:
         result: dict[str, Any] = {"stm": None, "ltm_id": None}
 
         if importance < _STM_ONLY_THRESHOLD:
-            logger.debug("StorageDepth: Inhalt unter Schwelle – verworfen.")
+            logger.debug("StorageDepth: Inhalt unter Schwelle - verworfen.")
             return result
 
         # STM immer (wenn genug Relevanz)
@@ -73,9 +73,7 @@ class StorageDepth:
 
         # LTM nur wenn Wichtigkeit hoch genug
         if importance >= _LTM_IMPORTANCE_THRESHOLD:
-            content_str = (
-                content if isinstance(content, str) else str(content)
-            )
+            content_str = content if isinstance(content, str) else str(content)
             ltm_id = self._ltm.store(
                 content=content_str,
                 category=category,
@@ -106,15 +104,11 @@ class StorageDepth:
         Returns:
             Anzahl konsolidierter Einträge.
         """
-        entries = self._stm.get_recent(
-            n=100, min_relevance=min_relevance
-        )
+        entries = self._stm.get_recent(n=100, min_relevance=min_relevance)
         count = 0
         for entry in entries:
             content_str = (
-                entry.content
-                if isinstance(entry.content, str)
-                else str(entry.content)
+                entry.content if isinstance(entry.content, str) else str(entry.content)
             )
             self._ltm.store(
                 content=content_str,
@@ -124,9 +118,7 @@ class StorageDepth:
             )
             count += 1
         if count:
-            logger.info(
-                "StorageDepth: %d STM-Einträge ins LTM konsolidiert.", count
-            )
+            logger.info("StorageDepth: %d STM-Einträge ins LTM konsolidiert.", count)
         return count
 
     # ------------------------------------------------------------------

@@ -1,4 +1,5 @@
 """Tests for API retry logic in nova.api.external_services."""
+
 from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
@@ -14,6 +15,7 @@ class TestRetryLogic:
 
         with patch("nova.api.external_services.urllib.request.urlopen") as mock_open:
             import urllib.error
+
             mock_open.side_effect = urllib.error.URLError("timeout")
 
             with patch("nova.api.external_services.time.sleep") as mock_sleep:
@@ -36,6 +38,7 @@ class TestRetryLogic:
 
         with patch("nova.api.external_services.urllib.request.urlopen") as mock_open:
             import urllib.error
+
             mock_open.side_effect = [
                 urllib.error.URLError("timeout"),
                 mock_response,
@@ -54,6 +57,7 @@ class TestRetryLogic:
 
         with patch("nova.api.external_services.urllib.request.urlopen") as mock_open:
             import urllib.error
+
             mock_open.side_effect = urllib.error.URLError("connection refused")
 
             with patch("nova.api.external_services.time.sleep") as mock_sleep:
@@ -92,6 +96,7 @@ class TestRetryLogic:
 
         with patch("nova.api.external_services.urllib.request.urlopen") as mock_open:
             import urllib.error
+
             mock_open.side_effect = urllib.error.URLError("timeout")
 
             with patch("nova.api.external_services.time.sleep") as mock_sleep:

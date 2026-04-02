@@ -1,4 +1,5 @@
-"""Tests for nova.modes.mode_manager – ModeManager."""
+"""Tests for nova.modes.mode_manager - ModeManager."""
+
 from __future__ import annotations
 
 
@@ -16,8 +17,14 @@ class TestModeSwitch:
         mode_manager.switch("nonexistent_mode")
         # Should stay at current mode or handle gracefully
         assert mode_manager.name in (
-            "normal", "work", "relax", "sleep", "focus",
-            "empathy", "dating", "meeting",
+            "normal",
+            "work",
+            "relax",
+            "sleep",
+            "focus",
+            "empathy",
+            "dating",
+            "meeting",
         )
 
     def test_switch_from_text(self, mode_manager):
@@ -33,8 +40,16 @@ class TestModeSwitch:
         assert mode_manager.name == "work"
 
     def test_all_modes_accessible(self, mode_manager):
-        for name in ("normal", "work", "relax", "focus", "empathy",
-                      "sleep", "dating", "meeting"):
+        for name in (
+            "normal",
+            "work",
+            "relax",
+            "focus",
+            "empathy",
+            "sleep",
+            "dating",
+            "meeting",
+        ):
             mode_manager.switch(name)
             assert mode_manager.name == name
 

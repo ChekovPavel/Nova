@@ -1,4 +1,5 @@
 """Tests for transaction support in nova.database.db_manager."""
+
 from __future__ import annotations
 
 import pytest
@@ -43,9 +44,8 @@ class TestTransactionRollback:
         assert row is None, "Row should have been rolled back"
 
     def test_transaction_reraises_exception(self, db_manager):
-        with pytest.raises(RuntimeError, match="boom"):
-            with db_manager.transaction():
-                raise RuntimeError("boom")
+        with pytest.raises(RuntimeError, match="boom"), db_manager.transaction():
+            raise RuntimeError("boom")
 
 
 class TestTransactionMultipleOps:
@@ -79,7 +79,7 @@ class TestTransactionMultipleOps:
                     "INSERT INTO personality_traits(trait, value) VALUES(?, ?)",
                     ("partial_a", 0.1),
                 )
-                # Second insert will fail – trait is PRIMARY KEY so duplicate
+                # Second insert will fail - trait is PRIMARY KEY so duplicate
                 db_manager._conn.execute(
                     "INSERT INTO personality_traits(trait, value) VALUES(?, ?)",
                     ("partial_a", 0.2),  # duplicate key

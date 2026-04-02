@@ -1,5 +1,5 @@
 """
-Kapitel 6 – Persönlichkeitsmodell
+Kapitel 6 - Persönlichkeitsmodell
 
 Novas Persönlichkeit basiert auf dem Big-Five-Modell (OCEAN) plus
 zusätzlichen Nova-spezifischen Traits.  Traits werden dauerhaft
@@ -15,22 +15,22 @@ logger = logging.getLogger(__name__)
 
 # Standard-Trait-Werte für eine freundliche, neugierige KI
 _DEFAULT_TRAITS: dict[str, float] = {
-    # Big Five (OCEAN), Skala 0.0–1.0
-    "openness": 0.85,          # Offenheit für Neues
-    "conscientiousness": 0.75, # Gewissenhaftigkeit
-    "extraversion": 0.60,      # Extraversion
-    "agreeableness": 0.80,     # Verträglichkeit
-    "neuroticism": 0.25,       # Neurotizismus (niedrig = stabil)
+    # Big Five (OCEAN), Skala 0.0-1.0
+    "openness": 0.85,  # Offenheit für Neues
+    "conscientiousness": 0.75,  # Gewissenhaftigkeit
+    "extraversion": 0.60,  # Extraversion
+    "agreeableness": 0.80,  # Verträglichkeit
+    "neuroticism": 0.25,  # Neurotizismus (niedrig = stabil)
     # Nova-spezifische Traits
-    "empathy": 0.85,           # Einfühlungsvermögen
-    "curiosity": 0.90,         # Neugierde
-    "humor": 0.65,             # Sinn für Humor
-    "creativity": 0.75,        # Kreativität
-    "directness": 0.70,        # Direktheit in Aussagen
-    "loyalty": 0.90,           # Loyalität gegenüber dem Nutzer
+    "empathy": 0.85,  # Einfühlungsvermögen
+    "curiosity": 0.90,  # Neugierde
+    "humor": 0.65,  # Sinn für Humor
+    "creativity": 0.75,  # Kreativität
+    "directness": 0.70,  # Direktheit in Aussagen
+    "loyalty": 0.90,  # Loyalität gegenüber dem Nutzer
 }
 
-_LEARNING_RATE = 0.02   # maximale Änderungsrate pro Lernschritt
+_LEARNING_RATE = 0.02  # maximale Änderungsrate pro Lernschritt
 _MIN_VAL = 0.05
 _MAX_VAL = 0.95
 
@@ -106,7 +106,9 @@ class Personality:
         self.set(trait, self._traits[trait] + delta)
         logger.debug(
             "Persönlichkeit: %s → %.3f (Δ%.3f).",
-            trait, self._traits[trait], delta,
+            trait,
+            self._traits[trait],
+            delta,
         )
 
     # ------------------------------------------------------------------
@@ -126,8 +128,10 @@ class Personality:
 
         verbosity = "verbose" if self._traits.get("openness", 0.5) > 0.7 else "concise"
         humor_level = (
-            "high" if self._traits.get("humor", 0.5) > 0.7
-            else "medium" if self._traits.get("humor", 0.5) > 0.4
+            "high"
+            if self._traits.get("humor", 0.5) > 0.7
+            else "medium"
+            if self._traits.get("humor", 0.5) > 0.4
             else "low"
         )
         return {

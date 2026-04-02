@@ -1,4 +1,5 @@
-"""Tests for nova.relationships.relationship – RelationshipModel & Person."""
+"""Tests for nova.relationships.relationship - RelationshipModel & Person."""
+
 from __future__ import annotations
 
 
@@ -40,8 +41,14 @@ class TestTrustAndRelationship:
     def test_relationship_status(self, relationships):
         person = relationships.add_person("Frank")
         assert person.relationship_status in (
-            "stranger", "acquaintance", "crush", "dating",
-            "partner", "ex", "colleague", "friend",
+            "stranger",
+            "acquaintance",
+            "crush",
+            "dating",
+            "partner",
+            "ex",
+            "colleague",
+            "friend",
         )
 
     def test_set_relationship_status(self, relationships):

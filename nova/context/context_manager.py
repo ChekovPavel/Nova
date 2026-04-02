@@ -1,5 +1,5 @@
 """
-Kapitel 5 – Kontext-Management
+Kapitel 5 - Kontext-Management
 
 Der ContextManager aggregiert Informationen aus STM, LTM und
 Beziehungsmodell zu einem kohärenten Kontext für die
@@ -74,9 +74,7 @@ class ContextManager:
             self._open_questions.append(question)
 
     def resolve_question(self, question: str) -> None:
-        self._open_questions = [
-            q for q in self._open_questions if q != question
-        ]
+        self._open_questions = [q for q in self._open_questions if q != question]
 
     # ------------------------------------------------------------------
     # Kontext-Snapshot

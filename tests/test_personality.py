@@ -1,7 +1,9 @@
-"""Tests for nova.personality – Personality and EmotionEngine."""
+"""Tests for nova.personality - Personality and EmotionEngine."""
+
 from __future__ import annotations
 
 # ── Personality ──────────────────────────────────────────────────────────────
+
 
 class TestPersonalityTraits:
     """Big Five trait model."""
@@ -36,6 +38,7 @@ class TestPersonalityTraits:
 
 
 # ── EmotionEngine ────────────────────────────────────────────────────────────
+
 
 class TestEmotionEngine:
     """VAD-based emotion system."""

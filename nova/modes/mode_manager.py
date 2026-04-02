@@ -1,13 +1,13 @@
 """
-Kapitel 14 – Moduswechsel
+Kapitel 14 - Moduswechsel
 
 Nova kann in verschiedene Betriebsmodi wechseln, die ihren
 Kommunikationsstil, ihre Reaktionszeit und ihren Ressourcenverbrauch
 beeinflussen.
 
 Neue Modi:
-- dating:  Romantisch-persönlicher Modus – warm, verspielt, emotional.
-- meeting: Besprechungsmodus – sehr konzise, strukturiert, sachlich.
+- dating:  Romantisch-persönlicher Modus - warm, verspielt, emotional.
+- meeting: Besprechungsmodus - sehr konzise, strukturiert, sachlich.
 """
 
 from __future__ import annotations
@@ -22,11 +22,12 @@ logger = logging.getLogger(__name__)
 @dataclass
 class Mode:
     """Definition eines Betriebsmodus."""
+
     name: str
     description: str
-    response_delay: float   # Sekunden
-    verbosity: str          # concise | normal | verbose
-    emotion_sensitivity: float  # 0.0–1.0
+    response_delay: float  # Sekunden
+    verbosity: str  # concise | normal | verbose
+    emotion_sensitivity: float  # 0.0-1.0
     allow_learning: bool
     sleep: bool = False
     # Profilkontext: "private" (persönlich) oder "work" (Arbeit)
@@ -48,7 +49,7 @@ MODES: dict[str, Mode] = {
     ),
     "work": Mode(
         name="work",
-        description="Fokussierter Arbeitsmodus – sachlich und präzise.",
+        description="Fokussierter Arbeitsmodus - sachlich und präzise.",
         response_delay=0.0,
         verbosity="concise",
         emotion_sensitivity=0.3,
@@ -57,7 +58,7 @@ MODES: dict[str, Mode] = {
     ),
     "relax": Mode(
         name="relax",
-        description="Entspannter Modus – locker und warm.",
+        description="Entspannter Modus - locker und warm.",
         response_delay=0.2,
         verbosity="verbose",
         emotion_sensitivity=0.9,
@@ -66,7 +67,7 @@ MODES: dict[str, Mode] = {
     ),
     "sleep": Mode(
         name="sleep",
-        description="Schlafmodus – minimale Aktivität.",
+        description="Schlafmodus - minimale Aktivität.",
         response_delay=0.0,
         verbosity="concise",
         emotion_sensitivity=0.1,
@@ -76,7 +77,7 @@ MODES: dict[str, Mode] = {
     ),
     "focus": Mode(
         name="focus",
-        description="Hochkonzentrations-Modus – keine Unterbrechungen.",
+        description="Hochkonzentrations-Modus - keine Unterbrechungen.",
         response_delay=0.0,
         verbosity="concise",
         emotion_sensitivity=0.2,
@@ -85,7 +86,7 @@ MODES: dict[str, Mode] = {
     ),
     "empathy": Mode(
         name="empathy",
-        description="Empathie-Modus – emotional unterstützend.",
+        description="Empathie-Modus - emotional unterstützend.",
         response_delay=0.3,
         verbosity="verbose",
         emotion_sensitivity=1.0,
@@ -95,7 +96,7 @@ MODES: dict[str, Mode] = {
     # --- Neue Modi ---
     "dating": Mode(
         name="dating",
-        description="Dating-Modus – romantisch, warm, verspielt und neugierig.",
+        description="Dating-Modus - romantisch, warm, verspielt und neugierig.",
         response_delay=0.2,
         verbosity="verbose",
         emotion_sensitivity=0.95,
@@ -104,7 +105,7 @@ MODES: dict[str, Mode] = {
     ),
     "meeting": Mode(
         name="meeting",
-        description="Besprechungsmodus – sehr konzise, strukturiert und sachlich.",
+        description="Besprechungsmodus - sehr konzise, strukturiert und sachlich.",
         response_delay=0.0,
         verbosity="concise",
         emotion_sensitivity=0.15,
@@ -179,7 +180,9 @@ class ModeManager:
         """
         mode_name = mode_name.lower()
         if mode_name not in MODES:
-            logger.warning("Unbekannter Modus: %r – bleibe bei %s.", mode_name, self._current.name)
+            logger.warning(
+                "Unbekannter Modus: %r - bleibe bei %s.", mode_name, self._current.name
+            )
             return self._current
 
         self._previous = self._current
@@ -187,7 +190,9 @@ class ModeManager:
         self._mode_start = time.monotonic()
         logger.info(
             "Modus gewechselt: %s → %s (Profil: %s).",
-            self._previous.name, self._current.name, self._current.profile_context,
+            self._previous.name,
+            self._current.name,
+            self._current.profile_context,
         )
 
         # Emotionen an Modus anpassen

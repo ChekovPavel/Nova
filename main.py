@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Nova – Persönlicher KI-Assistent
+Nova - Persönlicher KI-Assistent
 Einstiegspunkt
 
 Verwendung:
@@ -9,9 +9,9 @@ Verwendung:
     python main.py --config config.json
 
 Umgebungsvariablen (optional):
-    NOVA_LLM_API_KEY    – API-Schlüssel für LLM-Backend
-    NOVA_LLM_ENDPOINT   – URL des LLM-Endpunkts
-    NOVA_SECRET_KEY     – Verschlüsselungsschlüssel
+    NOVA_LLM_API_KEY    - API-Schlüssel für LLM-Backend
+    NOVA_LLM_ENDPOINT   - URL des LLM-Endpunkts
+    NOVA_SECRET_KEY     - Verschlüsselungsschlüssel
 """
 
 from __future__ import annotations
@@ -57,9 +57,7 @@ def build_config(args: argparse.Namespace) -> dict:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Nova – Persönlicher KI-Assistent"
-    )
+    parser = argparse.ArgumentParser(description="Nova - Persönlicher KI-Assistent")
     parser.add_argument(
         "--gui", action="store_true", help="GUI-Modus starten (Tkinter)"
     )
@@ -89,6 +87,7 @@ def main() -> None:
 
     if args.gui:
         from nova.gui.interface import NovaGUI
+
         gui = NovaGUI(nova)
         gui.start()
     else:

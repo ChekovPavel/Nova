@@ -1,5 +1,5 @@
 """
-Kapitel 2 – Kernlogik / Hauptschleife
+Kapitel 2 - Kernlogik / Hauptschleife
 
 Die MainLoop verarbeitet eingehende Nachrichten und koordiniert
 alle Subsysteme für jede Nutzerinteraktion.
@@ -109,7 +109,9 @@ class MainLoop:
         # 3a. Meeting verlassen → Zusammenfassung erstellen
         meeting_summary: str | None = None
         if prev_mode == "meeting" and current_mode != "meeting":
-            meeting_entries = n.stm.get_recent(_MAX_MEETING_ENTRIES_FOR_SUMMARY, entry_type="message")
+            meeting_entries = n.stm.get_recent(
+                _MAX_MEETING_ENTRIES_FOR_SUMMARY, entry_type="message"
+            )
             meeting_summary = n.reflection.summarize_meeting(meeting_entries)
             n.ltm.store(
                 meeting_summary,
@@ -158,7 +160,9 @@ class MainLoop:
                     nlp_result.slots["goal"],
                     priority=0.6,
                 )
-            if nlp_result.intent == "store_memory" and nlp_result.slots.get("memory_content"):
+            if nlp_result.intent == "store_memory" and nlp_result.slots.get(
+                "memory_content"
+            ):
                 # Profil-Tag beim Speichern mitgeben
                 profile_tag = (
                     n.profile_manager.active_ltm_tag()
@@ -178,7 +182,7 @@ class MainLoop:
             extra_context={"ltm": ltm_context},
         )
 
-        # 8a. Online-Suche (Kapitel 16.6) – bei expliziter Suchanfrage
+        # 8a. Online-Suche (Kapitel 16.6) - bei expliziter Suchanfrage
         if nlp_result.slots.get("search_query") and n.web_search:
             query = nlp_result.slots.get("search_query", "").strip()
             # Mindestlänge: zu kurze Queries liefern kaum brauchbare Ergebnisse
@@ -193,7 +197,9 @@ class MainLoop:
                         importance=0.6,
                         tags=[query.lower(), "web_search"],
                     )
-                response = response + "\n\n\U0001f50e **Online gefunden:**\n" + formatted
+                response = (
+                    response + "\n\n\U0001f50e **Online gefunden:**\n" + formatted
+                )
             else:
                 logger.debug(
                     "WebSearch: Suchanfrage zu kurz (%r), \u00fcbersprungen.", query

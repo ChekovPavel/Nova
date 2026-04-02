@@ -1,4 +1,5 @@
-"""Tests for main.py – entry point helpers."""
+"""Tests for main.py - entry point helpers."""
+
 from __future__ import annotations
 
 import json

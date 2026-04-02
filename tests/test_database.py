@@ -1,4 +1,5 @@
-"""Tests for nova.database.db_manager – DatabaseManager."""
+"""Tests for nova.database.db_manager - DatabaseManager."""
+
 from __future__ import annotations
 
 
@@ -12,12 +13,11 @@ class TestDatabaseManagerInit:
         mgr.close()
 
         import os
+
         assert os.path.exists(tmp_db)
 
     def test_schema_version_stored(self, db_manager):
-        row = db_manager.fetchone(
-            "SELECT value FROM meta WHERE key = 'schema_version'"
-        )
+        row = db_manager.fetchone("SELECT value FROM meta WHERE key = 'schema_version'")
         assert row is not None
 
     def test_tables_created(self, db_manager):
@@ -47,16 +47,12 @@ class TestInsertFetchall:
         )
         assert mid > 0
 
-        rows = db_manager.fetchall(
-            "SELECT * FROM memories WHERE id = ?", (mid,)
-        )
+        rows = db_manager.fetchall("SELECT * FROM memories WHERE id = ?", (mid,))
         assert len(rows) == 1
         assert rows[0]["content"] == "test memory"
 
     def test_fetchone_returns_none_for_missing(self, db_manager):
-        row = db_manager.fetchone(
-            "SELECT * FROM memories WHERE id = ?", (999999,)
-        )
+        row = db_manager.fetchone("SELECT * FROM memories WHERE id = ?", (999999,))
         assert row is None
 
 

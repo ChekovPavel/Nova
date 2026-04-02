@@ -1,5 +1,5 @@
 """
-Kapitel 11 – Lernmechanismus
+Kapitel 11 - Lernmechanismus
 
 Nova lernt aus Interaktionen:
 - Fakten werden aus Nutzeräußerungen extrahiert und gespeichert
@@ -38,12 +38,29 @@ _FACT_PATTERNS: list[tuple[str, str, str]] = [
 ]
 
 _POSITIVE_FEEDBACK = [
-    "gut", "richtig", "genau", "stimmt", "korrekt", "danke", "super",
-    "klasse", "toll", "perfekt", "yes", "correct", "right",
+    "gut",
+    "richtig",
+    "genau",
+    "stimmt",
+    "korrekt",
+    "danke",
+    "super",
+    "klasse",
+    "toll",
+    "perfekt",
+    "yes",
+    "correct",
+    "right",
 ]
 _NEGATIVE_FEEDBACK = [
-    "falsch", "nein", "stimmt nicht", "das ist wrong", "inkorrekt",
-    "no", "wrong", "incorrect",
+    "falsch",
+    "nein",
+    "stimmt nicht",
+    "das ist wrong",
+    "inkorrekt",
+    "no",
+    "wrong",
+    "incorrect",
 ]
 
 
@@ -133,12 +150,12 @@ class Learner:
         if is_positive:
             self._personality.adapt("conscientiousness", +1)
             self._personality.adapt("agreeableness", +1)
-            logger.debug("Feedback: positiv – Traits angepasst.")
+            logger.debug("Feedback: positiv - Traits angepasst.")
             return "positive"
 
         if is_negative:
             self._personality.adapt("neuroticism", +1)
-            logger.debug("Feedback: negativ – Traits angepasst.")
+            logger.debug("Feedback: negativ - Traits angepasst.")
             return "negative"
 
         return None
@@ -161,16 +178,15 @@ class Learner:
             self._ltm.update_importance(memory_id, new_importance)
             logger.debug(
                 "Verstärkung: Erinnerung #%d → Wichtigkeit %.2f.",
-                memory_id, new_importance,
+                memory_id,
+                new_importance,
             )
 
     # ------------------------------------------------------------------
     # Fakten-Extraktion (intern)
     # ------------------------------------------------------------------
 
-    def _extract_facts(
-        self, text: str
-    ) -> list[tuple[str, str, str]]:
+    def _extract_facts(self, text: str) -> list[tuple[str, str, str]]:
         """Gibt Liste von (subject, predicate, object) zurück."""
         results = []
         for pattern, _sg, _og in _FACT_PATTERNS:
@@ -178,9 +194,7 @@ class Learner:
                 try:
                     subject = m.group(1).strip()
                     # Prädikate aus dem Pattern ableiten
-                    predicate = re.search(
-                        r"\s+(\w+)\s+", pattern
-                    )
+                    predicate = re.search(r"\s+(\w+)\s+", pattern)
                     predicate_str = predicate.group(1) if predicate else "?"
                     obj_idx = int(_og)
                     obj = m.group(obj_idx).strip()

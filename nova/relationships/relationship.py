@@ -1,5 +1,5 @@
 """
-Kapitel 8 – Beziehungsmodell (bekannte Personen)
+Kapitel 8 - Beziehungsmodell (bekannte Personen)
 
 Verwaltet bekannte Personen mit ihren Profilen, Vertrauensstufen
 und Interaktionshistorie.  Neue Personen werden nur auf expliziten
@@ -18,7 +18,16 @@ from typing import Any
 logger = logging.getLogger(__name__)
 
 # Gültige Beziehungsstatus-Werte
-RELATIONSHIP_STATUSES = ("stranger", "acquaintance", "crush", "dating", "partner", "ex", "colleague", "friend")
+RELATIONSHIP_STATUSES = (
+    "stranger",
+    "acquaintance",
+    "crush",
+    "dating",
+    "partner",
+    "ex",
+    "colleague",
+    "friend",
+)
 
 
 def _now_iso() -> str:
@@ -64,9 +73,7 @@ class Person:
     def mark_seen(self) -> None:
         """Aktualisiert den letzten Kontaktzeitpunkt."""
         self.last_seen = _now_iso()
-        self._db.update(
-            "persons", {"last_seen": self.last_seen}, "id=?", (self.id,)
-        )
+        self._db.update("persons", {"last_seen": self.last_seen}, "id=?", (self.id,))
 
     # ------------------------------------------------------------------
     # Dating & Beziehungs-Helfer
@@ -191,7 +198,7 @@ class RelationshipModel:
             name:        Anzeigename.
             aliases:     Alternative Namen / Spitznamen.
             profile:     Anfangs-Profilwerte.
-            trust_level: Anfängliche Vertrauensstufe (0–1).
+            trust_level: Anfängliche Vertrauensstufe (0-1).
 
         Returns:
             Person-Objekt.
@@ -220,15 +227,17 @@ class RelationshipModel:
         name_lower = name.lower()
         # Cache
         for person in self._cache.values():
-            if (person.name.lower() == name_lower
-                    or name_lower in [a.lower() for a in person.aliases]):
+            if person.name.lower() == name_lower or name_lower in [
+                a.lower() for a in person.aliases
+            ]:
                 return person
         # DB
         rows = self._db.fetchall("SELECT * FROM persons")
         for row in rows:
             p = Person(dict(row), self._db)
-            if (p.name.lower() == name_lower
-                    or name_lower in [a.lower() for a in p.aliases]):
+            if p.name.lower() == name_lower or name_lower in [
+                a.lower() for a in p.aliases
+            ]:
                 self._cache[p.id] = p
                 return p
         return None
@@ -236,9 +245,7 @@ class RelationshipModel:
     def get_by_id(self, person_id: int) -> Person | None:
         if person_id in self._cache:
             return self._cache[person_id]
-        row = self._db.fetchone(
-            "SELECT * FROM persons WHERE id=?", (person_id,)
-        )
+        row = self._db.fetchone("SELECT * FROM persons WHERE id=?", (person_id,))
         if row:
             p = Person(dict(row), self._db)
             self._cache[p.id] = p
@@ -247,9 +254,7 @@ class RelationshipModel:
 
     def list_persons(self) -> list[Person]:
         """Gibt alle bekannten Personen zurück."""
-        rows = self._db.fetchall(
-            "SELECT * FROM persons ORDER BY last_seen DESC"
-        )
+        rows = self._db.fetchall("SELECT * FROM persons ORDER BY last_seen DESC")
         result = []
         for row in rows:
             p = self._cache.get(row["id"]) or Person(dict(row), self._db)
@@ -272,7 +277,9 @@ class RelationshipModel:
             person.update_trust(delta)
             logger.debug(
                 "Vertrauen für %s: %.2f (Δ%.2f).",
-                person.name, person.trust_level, delta,
+                person.name,
+                person.trust_level,
+                delta,
             )
 
     def remove_person(self, person_id: int) -> bool:
@@ -319,7 +326,9 @@ class RelationshipModel:
         )
         logger.debug(
             "Timeline: %s-Ereignis für Person %d gespeichert (#%d).",
-            event_type, person_id, entry_id,
+            event_type,
+            person_id,
+            entry_id,
         )
         return entry_id
 

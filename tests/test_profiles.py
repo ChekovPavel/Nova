@@ -1,4 +1,5 @@
-"""Tests for nova.profiles.profile_manager – ProfileManager."""
+"""Tests for nova.profiles.profile_manager - ProfileManager."""
+
 from __future__ import annotations
 
 

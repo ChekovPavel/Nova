@@ -1,5 +1,5 @@
 """
-Kapitel 19 – Sicherheit & Verschlüsselung
+Kapitel 19 - Sicherheit & Verschlüsselung
 
 Fernet-basierte symmetrische Verschlüsselung für sensible Inhalte
 (Erinnerungen, Personenprofile).  Passwort-Hashing mit PBKDF2.
@@ -17,13 +17,12 @@ logger = logging.getLogger(__name__)
 
 # Versuche, cryptography zu importieren; Fallback auf XOR-Stub
 try:
-    from cryptography.fernet import Fernet, InvalidToken
+    from cryptography.fernet import Fernet
+
     _FERNET_AVAILABLE = True
 except ImportError:
     _FERNET_AVAILABLE = False
-    logger.warning(
-        "cryptography nicht installiert – Verschlüsselung deaktiviert."
-    )
+    logger.warning("cryptography nicht installiert - Verschlüsselung deaktiviert.")
 
 
 class SecurityManager:

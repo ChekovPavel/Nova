@@ -1,7 +1,7 @@
 """
-Kapitel 25 – Lokales STT (Speech-to-Text) via Faster-Whisper oder Vosk
+Kapitel 25 - Lokales STT (Speech-to-Text) via Faster-Whisper oder Vosk
 
-Vollständig offline STT – kein Google, keine Cloud.
+Vollständig offline STT - kein Google, keine Cloud.
 
 Optionen für Raspberry Pi 4B+:
   - faster-whisper (empfohlen): pip install faster-whisper
@@ -28,6 +28,7 @@ logger = logging.getLogger(__name__)
 # Versuche faster-whisper zu importieren
 try:
     from faster_whisper import WhisperModel
+
     _WHISPER_AVAILABLE = True
 except ImportError:
     _WHISPER_AVAILABLE = False
@@ -36,6 +37,7 @@ except ImportError:
 # Versuche vosk zu importieren
 try:
     import vosk
+
     _VOSK_AVAILABLE = True
 except ImportError:
     _VOSK_AVAILABLE = False
@@ -44,15 +46,16 @@ except ImportError:
 # PyAudio für Mikrofon-Zugriff
 try:
     import pyaudio
+
     _PYAUDIO_AVAILABLE = True
 except ImportError:
     _PYAUDIO_AVAILABLE = False
-    logger.info("PyAudio nicht installiert – Mikrofon deaktiviert.")
+    logger.info("PyAudio nicht installiert - Mikrofon deaktiviert.")
 
 # Basis-Audioparameter
 _RATE = 16000
 _CHANNELS = 1
-_FORMAT_WIDTH = 2   # 16-bit = 2 Bytes
+_FORMAT_WIDTH = 2  # 16-bit = 2 Bytes
 _CHUNK = 1024
 
 
@@ -88,13 +91,13 @@ class LocalSTT:
     # Initialisierung
     # ------------------------------------------------------------------
 
-    def _init_whisper(
-        self, model_size: str, device: str, compute_type: str
-    ) -> None:
+    def _init_whisper(self, model_size: str, device: str, compute_type: str) -> None:
         try:
             logger.info(
                 "Lade Whisper-Modell: %s (device=%s, compute=%s) …",
-                model_size, device, compute_type,
+                model_size,
+                device,
+                compute_type,
             )
             self._whisper = WhisperModel(
                 model_size,
@@ -194,7 +197,7 @@ class LocalSTT:
                 tmp_path,
                 language=self.language,
                 beam_size=1,
-                vad_filter=True,        # Stille wird übersprungen
+                vad_filter=True,  # Stille wird übersprungen
             )
             text = " ".join(s.text for s in segments).strip()
             return text if text else None
@@ -212,6 +215,7 @@ class LocalSTT:
 
     def _recognize_vosk(self, audio_bytes: bytes) -> str | None:
         import json as _json
+
         try:
             rec = vosk.KaldiRecognizer(self._vosk_model, _RATE)
             rec.AcceptWaveform(audio_bytes)

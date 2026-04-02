@@ -1,4 +1,5 @@
-"""Tests for nova.nlp.processor – NLPProcessor."""
+"""Tests for nova.nlp.processor - NLPProcessor."""
+
 from __future__ import annotations
 
 

@@ -1,5 +1,5 @@
 """
-Kapitel 18 – Datenbank & Persistenz
+Kapitel 18 - Datenbank & Persistenz
 
 SQLite-basierter Datenbankmanager.  Alle Subsysteme schreiben und lesen
 über diese Klasse, so dass das Datenbankschema an einer zentralen Stelle
@@ -162,9 +162,7 @@ class DatabaseManager:
         with self._lock:
             return self._conn.execute(sql, params).fetchall()
 
-    def fetchone(
-        self, sql: str, params: tuple = ()
-    ) -> sqlite3.Row | None:
+    def fetchone(self, sql: str, params: tuple = ()) -> sqlite3.Row | None:
         with self._lock:
             return self._conn.execute(sql, params).fetchone()
 
@@ -187,9 +185,7 @@ class DatabaseManager:
         sets = ", ".join(f"{k}=?" for k in data)
         sql = f"UPDATE {table} SET {sets} WHERE {where}"
         with self._lock:
-            cur = self._conn.execute(
-                sql, tuple(data.values()) + where_params
-            )
+            cur = self._conn.execute(sql, tuple(data.values()) + where_params)
             self._conn.commit()
             return cur.rowcount
 

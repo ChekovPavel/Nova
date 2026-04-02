@@ -1,5 +1,5 @@
 """
-Kapitel 23 – RelevanzFilter / STM-Verarbeitung
+Kapitel 23 - RelevanzFilter / STM-Verarbeitung
 
 Bewertet eingehende Nachrichten und STM-Einträge nach Relevanz,
 filtert Rauschen heraus und bereitet Kontextfenster für die
@@ -50,7 +50,7 @@ class RelevanceFilter:
         boost_tags: list[str] | None = None,
     ) -> float:
         """
-        Berechnet einen Relevanz-Score (0.0–1.0) für einen Text.
+        Berechnet einen Relevanz-Score (0.0-1.0) für einen Text.
 
         Args:
             text:       Zu bewertender Text.
@@ -110,9 +110,7 @@ class RelevanceFilter:
         context: list[dict[str, Any]] = []
 
         # STM-Nachrichten
-        recent = self._stm.get_recent(
-            n=n_recent, min_relevance=min_relevance
-        )
+        recent = self._stm.get_recent(n=n_recent, min_relevance=min_relevance)
         for entry in recent:
             context.append(
                 {
@@ -153,7 +151,6 @@ class RelevanceFilter:
         Returns:
             Anzahl entfernter Einträge.
         """
-        len(self._stm)
         purged = self._stm.purge()
         entries = self._stm.get_recent(n=999)
         removed = 0

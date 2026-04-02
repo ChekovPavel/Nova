@@ -1,5 +1,5 @@
 """
-Kapitel 3 – Sprachverarbeitung / NLP-Basis
+Kapitel 3 - Sprachverarbeitung / NLP-Basis
 
 Verarbeitet Nutzeringaben: Tokenisierung, Intent-Erkennung,
 Slot-Extraktion und Spracherkennnung.
@@ -12,7 +12,7 @@ from __future__ import annotations
 import logging
 import re
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, ClassVar
 
 logger = logging.getLogger(__name__)
 
@@ -20,26 +20,36 @@ logger = logging.getLogger(__name__)
 # Intent-Definitionen
 # ------------------------------------------------------------------
 _INTENTS: dict[str, list[str]] = {
-    "greeting":       [r"\b(hallo|hi|hey|guten morgen|guten abend|servus|moin)\b"],
-    "farewell":       [r"\b(tschüss|auf wiedersehen|bye|ciao|bis später|tschau)\b"],
-    "thanks":         [r"\b(danke|vielen dank|thx|thank you|merci)\b"],
-    "question":       [r"^(wer|was|wie|wann|wo|warum|welche?|ist|sind|kann|könntest|würdest|hast du)\b", r"\?$"],
-    "help":           [r"\b(hilf mir|hilfe|kannst du|kannst du mir|bitte erkläre?)\b"],
-    "store_memory":   [r"\b(merke dir|vergiss nicht|notiere|speichere)\b"],
-    "recall_memory":  [r"\b(erinnerst du dich|weißt du noch|was weißt du über)\b"],
-    "search_online":  [r"\b(such(e)? (mal |nach |online )?|google|suche nach|wer ist|was ist|finde (?:heraus|etwas) über|was weißt du über|kennst du)\b"],
-    "set_goal":       [r"\b(mein ziel ist|ich möchte|ich will|ich plane)\b"],
-    "mode_change":    [r"\b(schlafmodus|arbeitsmodus|entspannungsmodus|ruhemodus)\b"],
-    "emotion_share":  [r"\b(ich bin (traurig|glücklich|wütend|fröhlich|ängstlich|aufgeregt))\b"],
-    "add_person":     [r"\b(das ist|ich stelle vor|kenn(st du)? (mein|meinen|meine))\b"],
-    "reflection":     [r"\b(was denkst du über dich|reflektiere|selbstreflexion|wie geht es dir)\b"],
-    "general":        [],  # Fallback
+    "greeting": [r"\b(hallo|hi|hey|guten morgen|guten abend|servus|moin)\b"],
+    "farewell": [r"\b(tschüss|auf wiedersehen|bye|ciao|bis später|tschau)\b"],
+    "thanks": [r"\b(danke|vielen dank|thx|thank you|merci)\b"],
+    "question": [
+        r"^(wer|was|wie|wann|wo|warum|welche?|ist|sind|kann|könntest|würdest|hast du)\b",
+        r"\?$",
+    ],
+    "help": [r"\b(hilf mir|hilfe|kannst du|kannst du mir|bitte erkläre?)\b"],
+    "store_memory": [r"\b(merke dir|vergiss nicht|notiere|speichere)\b"],
+    "recall_memory": [r"\b(erinnerst du dich|weißt du noch|was weißt du über)\b"],
+    "search_online": [
+        r"\b(such(e)? (mal |nach |online )?|google|suche nach|wer ist|was ist|finde (?:heraus|etwas) über|was weißt du über|kennst du)\b"
+    ],
+    "set_goal": [r"\b(mein ziel ist|ich möchte|ich will|ich plane)\b"],
+    "mode_change": [r"\b(schlafmodus|arbeitsmodus|entspannungsmodus|ruhemodus)\b"],
+    "emotion_share": [
+        r"\b(ich bin (traurig|glücklich|wütend|fröhlich|ängstlich|aufgeregt))\b"
+    ],
+    "add_person": [r"\b(das ist|ich stelle vor|kenn(st du)? (mein|meinen|meine))\b"],
+    "reflection": [
+        r"\b(was denkst du über dich|reflektiere|selbstreflexion|wie geht es dir)\b"
+    ],
+    "general": [],  # Fallback
 }
 
 
 @dataclass
 class NLPResult:
     """Ergebnis einer NLP-Verarbeitung."""
+
     raw_text: str
     normalized: str
     tokens: list[str]
@@ -48,7 +58,7 @@ class NLPResult:
     slots: dict[str, Any] = field(default_factory=dict)
     language: str = "de"
     is_question: bool = False
-    sentiment: float = 0.0   # -1.0 (negativ) bis +1.0 (positiv)
+    sentiment: float = 0.0  # -1.0 (negativ) bis +1.0 (positiv)
     keywords: list[str] = field(default_factory=list)
 
 
@@ -66,13 +76,36 @@ class NLPProcessor:
     """
 
     # Einfache Sentiment-Wörter
-    _POSITIVE_WORDS = {
-        "gut", "super", "toll", "klasse", "schön", "freude", "liebe",
-        "danke", "perfekt", "wunderbar", "großartig", "yes", "great", "good",
+    _POSITIVE_WORDS: ClassVar[set[str]] = {
+        "gut",
+        "super",
+        "toll",
+        "klasse",
+        "schön",
+        "freude",
+        "liebe",
+        "danke",
+        "perfekt",
+        "wunderbar",
+        "großartig",
+        "yes",
+        "great",
+        "good",
     }
-    _NEGATIVE_WORDS = {
-        "schlecht", "schrecklich", "traurig", "wütend", "hasse", "nervig",
-        "problem", "fehler", "nein", "leider", "bad", "terrible", "sad",
+    _NEGATIVE_WORDS: ClassVar[set[str]] = {
+        "schlecht",
+        "schrecklich",
+        "traurig",
+        "wütend",
+        "hasse",
+        "nervig",
+        "problem",
+        "fehler",
+        "nein",
+        "leider",
+        "bad",
+        "terrible",
+        "sad",
     }
 
     def __init__(self) -> None:
@@ -131,8 +164,28 @@ class NLPProcessor:
     # Spracherkennung
     # ------------------------------------------------------------------
 
-    _DE_MARKERS = {"ich", "du", "ist", "ein", "die", "der", "das", "und", "nicht"}
-    _EN_MARKERS = {"i", "you", "is", "the", "and", "not", "a", "to", "it"}
+    _DE_MARKERS: ClassVar[set[str]] = {
+        "ich",
+        "du",
+        "ist",
+        "ein",
+        "die",
+        "der",
+        "das",
+        "und",
+        "nicht",
+    }
+    _EN_MARKERS: ClassVar[set[str]] = {
+        "i",
+        "you",
+        "is",
+        "the",
+        "and",
+        "not",
+        "a",
+        "to",
+        "it",
+    }
 
     def _detect_language(self, text: str) -> str:
         tokens = set(re.findall(r"\b\w+\b", text.lower()))
@@ -153,8 +206,7 @@ class NLPProcessor:
             if not patterns:
                 continue
             matches = sum(
-                1 for p in patterns
-                if re.search(p, text_lower, re.IGNORECASE)
+                1 for p in patterns if re.search(p, text_lower, re.IGNORECASE)
             )
             score = matches / len(patterns)
             if score > best_score:
@@ -174,7 +226,8 @@ class NLPProcessor:
         # Namen aus Kontext
         name_match = re.search(
             r"(?:ich heiße|ich bin|mein name ist|call me|i am|i'm)\s+([A-ZÄÖÜ][a-zäöüß]+)",
-            text, re.IGNORECASE,
+            text,
+            re.IGNORECASE,
         )
         if name_match:
             slots["name"] = name_match.group(1)
@@ -182,7 +235,8 @@ class NLPProcessor:
         # Ziel
         goal_match = re.search(
             r"(?:mein ziel ist|ich möchte|ich will|ich plane)\s+(.+?)(?:\.|$)",
-            text, re.IGNORECASE,
+            text,
+            re.IGNORECASE,
         )
         if goal_match:
             slots["goal"] = goal_match.group(1).strip()
@@ -191,7 +245,8 @@ class NLPProcessor:
         if intent == "store_memory":
             mem_match = re.search(
                 r"(?:merke dir|vergiss nicht|notiere|speichere)[,:\s]+(.+)",
-                text, re.IGNORECASE,
+                text,
+                re.IGNORECASE,
             )
             if mem_match:
                 slots["memory_content"] = mem_match.group(1).strip()
@@ -208,7 +263,8 @@ class NLPProcessor:
                 r"was\s+weisst\s+du\s+ueber\s+|"
                 r"kennst\s+du\s+)"
                 r"(.+?)(?:\?|!|\.|$)",
-                text, re.IGNORECASE,
+                text,
+                re.IGNORECASE,
             )
             if search_match:
                 # Gruppe 1 enthält immer die Suchanfrage (nach dem Trigger-Ausdruck)
@@ -216,7 +272,9 @@ class NLPProcessor:
                 # Trailing noise-words entfernen ("online", "mal", "bitte")
                 raw_query = re.sub(
                     r"\s+(?:online|mal|bitte|doch|jetzt)\s*$",
-                    "", raw_query, flags=re.IGNORECASE,
+                    "",
+                    raw_query,
+                    flags=re.IGNORECASE,
                 ).strip()
                 if raw_query:
                     slots["search_query"] = raw_query
@@ -239,11 +297,42 @@ class NLPProcessor:
     # Keywords
     # ------------------------------------------------------------------
 
-    _STOP_WORDS = {
-        "ich", "du", "er", "sie", "es", "wir", "ihr", "die", "der", "das",
-        "ein", "eine", "und", "oder", "aber", "nicht", "ist", "bin", "hat",
-        "i", "you", "he", "she", "it", "we", "the", "a", "an", "is", "are",
-        "and", "or", "not", "have", "has",
+    _STOP_WORDS: ClassVar[set[str]] = {
+        "ich",
+        "du",
+        "er",
+        "sie",
+        "es",
+        "wir",
+        "ihr",
+        "die",
+        "der",
+        "das",
+        "ein",
+        "eine",
+        "und",
+        "oder",
+        "aber",
+        "nicht",
+        "ist",
+        "bin",
+        "hat",
+        "i",
+        "you",
+        "he",
+        "she",
+        "it",
+        "we",
+        "the",
+        "a",
+        "an",
+        "is",
+        "are",
+        "and",
+        "or",
+        "not",
+        "have",
+        "has",
     }
 
     def _extract_keywords(self, tokens: list[str]) -> list[str]:

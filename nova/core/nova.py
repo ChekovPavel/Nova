@@ -1,5 +1,5 @@
 """
-Kapitel 1 – Grundstruktur / Architektur Nova
+Kapitel 1 - Grundstruktur / Architektur Nova
 
 Nova ist ein persönlicher KI-Assistent mit Persönlichkeit, Gedächtnis,
 Emotionen und einem sozialen Sicherheitsnetz.  Dieses Modul definiert
@@ -38,7 +38,12 @@ _CONFIG_SCHEMA: dict[str, dict[str, Any]] = {
         "fields": {
             "host": {"type": str, "default": "http://localhost:11434"},
             "model": {"type": str, "default": "llama3.2:1b"},
-            "temperature": {"type": (int, float), "default": 0.7, "min": 0.0, "max": 2.0},
+            "temperature": {
+                "type": (int, float),
+                "default": 0.7,
+                "min": 0.0,
+                "max": 2.0,
+            },
             "max_tokens": {"type": int, "default": 512, "min": 1},
         },
     },
@@ -73,8 +78,10 @@ def validate_config(cfg: dict) -> dict:
             logger.warning(
                 "Konfiguration: %r hat ungültigen Typ %s (erwartet %s), "
                 "verwende Standard %r",
-                key, type(value).__name__,
-                expected_type.__name__ if isinstance(expected_type, type)
+                key,
+                type(value).__name__,
+                expected_type.__name__
+                if isinstance(expected_type, type)
                 else str(expected_type),
                 default,
             )
@@ -88,13 +95,17 @@ def validate_config(cfg: dict) -> dict:
             if min_val is not None and value < min_val:
                 logger.warning(
                     "Konfiguration: %r=%r unter Minimum %r, verwende Minimum",
-                    key, value, min_val,
+                    key,
+                    value,
+                    min_val,
                 )
                 validated[key] = min_val
             elif max_val is not None and value > max_val:
                 logger.warning(
                     "Konfiguration: %r=%r über Maximum %r, verwende Maximum",
-                    key, value, max_val,
+                    key,
+                    value,
+                    max_val,
                 )
                 validated[key] = max_val
 
@@ -110,9 +121,10 @@ def validate_config(cfg: dict) -> dict:
 
                 if sub_val is not None and not isinstance(sub_val, sub_type):
                     logger.warning(
-                        "Konfiguration: %s.%s hat ungültigen Typ, "
-                        "verwende Standard %r",
-                        key, sub_key, sub_default,
+                        "Konfiguration: %s.%s hat ungültigen Typ, verwende Standard %r",
+                        key,
+                        sub_key,
+                        sub_default,
                     )
                     value[sub_key] = sub_default
                     continue
@@ -123,13 +135,19 @@ def validate_config(cfg: dict) -> dict:
                     if sub_min is not None and sub_val < sub_min:
                         logger.warning(
                             "Konfiguration: %s.%s=%r unter Minimum %r",
-                            key, sub_key, sub_val, sub_min,
+                            key,
+                            sub_key,
+                            sub_val,
+                            sub_min,
                         )
                         value[sub_key] = sub_min
                     elif sub_max is not None and sub_val > sub_max:
                         logger.warning(
                             "Konfiguration: %s.%s=%r über Maximum %r",
-                            key, sub_key, sub_val, sub_max,
+                            key,
+                            sub_key,
+                            sub_val,
+                            sub_max,
                         )
                         value[sub_key] = sub_max
 
@@ -243,9 +261,7 @@ class Nova:
 
         # Gedächtnis
         nova.ltm = LongTermMemory(nova.db, nova.security)
-        nova.stm = ShortTermMemory(
-            capacity=cfg.get("stm_capacity", 20)
-        )
+        nova.stm = ShortTermMemory(capacity=cfg.get("stm_capacity", 20))
         nova.storage_depth = StorageDepth(nova.ltm, nova.stm)
         nova.relevance_filter = RelevanceFilter(nova.stm, nova.ltm)
 
@@ -258,15 +274,13 @@ class Nova:
         nova.person_recognition = PersonRecognition(nova.relationships)
 
         # Kontext
-        nova.context_manager = ContextManager(
-            nova.stm, nova.ltm, nova.relationships
-        )
+        nova.context_manager = ContextManager(nova.stm, nova.ltm, nova.relationships)
 
         # NLP & Antwortgenerierung
         nova.nlp_processor = NLPProcessor()
         nova.social_safety = SocialSafetyLayer()
 
-        # Lokales LLM (Ollama) – hat Vorrang vor externem API
+        # Lokales LLM (Ollama) - hat Vorrang vor externem API
         ollama_cfg = cfg.get("ollama", {})
         nova.ollama = OllamaClient(
             host=ollama_cfg.get("host", "http://localhost:11434"),
@@ -277,7 +291,7 @@ class Nova:
         if nova.ollama.is_alive():
             logger.info("Ollama verfügbar: %s", nova.ollama.model)
         else:
-            logger.info("Ollama nicht verfügbar – Fallback auf Regelantworten.")
+            logger.info("Ollama nicht verfügbar - Fallback auf Regelantworten.")
 
         nova.response_generator = ResponseGenerator(
             nova.personality,
@@ -296,9 +310,7 @@ class Nova:
 
         # Modi & Voice
         nova.mode_manager = ModeManager(nova.emotion)
-        nova.profile_manager = ProfileManager(
-            stm_capacity=cfg.get("stm_capacity", 20)
-        )
+        nova.profile_manager = ProfileManager(stm_capacity=cfg.get("stm_capacity", 20))
         nova.voice_io = VoiceIO(cfg.get("voice", {}))
 
         # Lokales STT (Whisper / Vosk)
@@ -317,11 +329,11 @@ class Nova:
         # Externe Dienste (Fallback, falls Ollama nicht verfügbar)
         nova.api_client = ExternalServices(cfg.get("api", {}))
 
-        # Online-Suche (Kapitel 16.6 – kein API-Key erforderlich)
+        # Online-Suche (Kapitel 16.6 - kein API-Key erforderlich)
         web_cfg = cfg.get("web_search", {})
         nova.web_search = WebSearch(enabled=web_cfg.get("enabled", True))
 
-        # Profil-Anreicherung (Kapitel 16.7 – auto-lernt aus Gesprächen)
+        # Profil-Anreicherung (Kapitel 16.7 - auto-lernt aus Gesprächen)
         nova.profile_enricher = ProfileEnricher(nova.ltm)
 
         # Vorschlags-Engine

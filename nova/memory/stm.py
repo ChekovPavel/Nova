@@ -1,5 +1,5 @@
 """
-Kapitel 10 – Kurzzeitgedächtnis / STM
+Kapitel 10 - Kurzzeitgedächtnis / STM
 
 Das STM hält die aktuelle Konversation und kurzfristig relevante
 Informationen in einer Deque mit konfigurierbarer Kapazität.
@@ -24,10 +24,10 @@ class STMEntry:
     """Ein einzelner Kurzzeitgedächtnis-Eintrag."""
 
     content: Any
-    entry_type: str = "message"          # message | fact | emotion | context
-    relevance: float = 0.5               # 0.0 – 1.0
+    entry_type: str = "message"  # message | fact | emotion | context
+    relevance: float = 0.5  # 0.0 - 1.0
     created_at: float = field(default_factory=time.monotonic)
-    ttl: float = _DEFAULT_TTL            # Lebensdauer in Sekunden
+    ttl: float = _DEFAULT_TTL  # Lebensdauer in Sekunden
     tags: list[str] = field(default_factory=list)
 
     @property
@@ -72,12 +72,12 @@ class ShortTermMemory:
             tags=tags or [],
         )
         self._buffer.append(entry)
-        logger.debug("STM: Eintrag hinzugefügt (type=%s, rel=%.2f).", entry_type, relevance)
+        logger.debug(
+            "STM: Eintrag hinzugefügt (type=%s, rel=%.2f).", entry_type, relevance
+        )
         return entry
 
-    def add_message(
-        self, role: str, text: str, relevance: float = 0.5
-    ) -> STMEntry:
+    def add_message(self, role: str, text: str, relevance: float = 0.5) -> STMEntry:
         """Kurzform: Nachricht (user/nova) ins STM."""
         return self.add(
             content={"role": role, "text": text},

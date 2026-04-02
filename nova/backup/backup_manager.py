@@ -1,5 +1,5 @@
 """
-Kapitel 26 – Backup-System
+Kapitel 26 - Backup-System
 
 Erstellt automatisch Backups der SQLite-Datenbank (nova_data.db).
 Privaten Personendaten und Erinnerungen sind damit vor Datenverlust
@@ -30,9 +30,9 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 _DEFAULT_BACKUP_DIR = os.path.expanduser("~/nova_backups")
-_DEFAULT_MAX_BACKUPS = 30          # maximale Anzahl gespeicherter Backups
-_DEFAULT_INTERVAL_SEC = 3600       # Backup-Intervall: 1 Stunde
-_DEFAULT_DAILY_INTERVAL = 86400    # Täglich vollständiges Backup
+_DEFAULT_MAX_BACKUPS = 30  # maximale Anzahl gespeicherter Backups
+_DEFAULT_INTERVAL_SEC = 3600  # Backup-Intervall: 1 Stunde
+_DEFAULT_DAILY_INTERVAL = 86400  # Täglich vollständiges Backup
 
 
 class BackupManager:
@@ -89,7 +89,8 @@ class BackupManager:
         self._thread.start()
         logger.info(
             "Backup-Thread gestartet (Intervall: %ds, Ziel: %s).",
-            self.interval_sec, self.backup_dir,
+            self.interval_sec,
+            self.backup_dir,
         )
 
     def stop(self) -> None:
@@ -107,11 +108,17 @@ class BackupManager:
             now = time.monotonic()
 
             # Stündliches Backup
-            if self._last_backup is None or (now - self._last_backup) >= self.interval_sec:
+            if (
+                self._last_backup is None
+                or (now - self._last_backup) >= self.interval_sec
+            ):
                 self._do_backup(daily=False)
 
             # Tägliches Backup
-            if self._last_daily is None or (now - self._last_daily) >= _DEFAULT_DAILY_INTERVAL:
+            if (
+                self._last_daily is None
+                or (now - self._last_daily) >= _DEFAULT_DAILY_INTERVAL
+            ):
                 self._do_backup(daily=True)
 
     # ------------------------------------------------------------------
@@ -130,9 +137,7 @@ class BackupManager:
         """
         return self._do_backup(daily=False, label=label)
 
-    def _do_backup(
-        self, daily: bool = False, label: str = ""
-    ) -> str | None:
+    def _do_backup(self, daily: bool = False, label: str = "") -> str | None:
         """Interne Backup-Methode."""
         if not os.path.exists(self.db_path):
             logger.warning("Datenbank nicht gefunden: %s", self.db_path)
@@ -151,9 +156,11 @@ class BackupManager:
             self._sqlite_backup(self.db_path, backup_raw)
 
             # Komprimieren
-            with open(backup_raw, "rb") as f_in:
-                with gzip.open(dest_path, "wb", compresslevel=6) as f_out:
-                    shutil.copyfileobj(f_in, f_out)
+            with (
+                open(backup_raw, "rb") as f_in,
+                gzip.open(dest_path, "wb", compresslevel=6) as f_out,
+            ):
+                shutil.copyfileobj(f_in, f_out)
             os.unlink(backup_raw)
 
             # Checksum speichern
@@ -165,7 +172,9 @@ class BackupManager:
             size_kb = os.path.getsize(dest_path) / 1024
             logger.info(
                 "Backup erstellt: %s (%.1f KB, SHA256: %s…)",
-                dest_path, size_kb, checksum[:12],
+                dest_path,
+                size_kb,
+                checksum[:12],
             )
 
             # Rotation: alte Backups löschen
@@ -246,7 +255,9 @@ class BackupManager:
             if stored != actual:
                 logger.error(
                     "Backup-Integritätsprüfung fehlgeschlagen! "
-                    "Erwartet: %s, Gefunden: %s", stored, actual
+                    "Erwartet: %s, Gefunden: %s",
+                    stored,
+                    actual,
                 )
                 return False
 
@@ -258,9 +269,8 @@ class BackupManager:
 
         # Wiederherstellen
         try:
-            with gzip.open(backup_path, "rb") as f_in:
-                with open(target, "wb") as f_out:
-                    shutil.copyfileobj(f_in, f_out)
+            with gzip.open(backup_path, "rb") as f_in, open(target, "wb") as f_out:
+                shutil.copyfileobj(f_in, f_out)
             logger.info("Backup wiederhergestellt: %s → %s", backup_path, target)
             return True
         except Exception as exc:
