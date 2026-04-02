@@ -27,6 +27,7 @@ _INTENTS: Dict[str, List[str]] = {
     "help":           [r"\b(hilf mir|hilfe|kannst du|kannst du mir|bitte erkläre?)\b"],
     "store_memory":   [r"\b(merke dir|vergiss nicht|notiere|speichere)\b"],
     "recall_memory":  [r"\b(erinnerst du dich|weißt du noch|was weißt du über)\b"],
+    "search_online":  [r"\b(such(e)? (mal |nach |online )?|google|suche nach|wer ist|was ist|finde (?:heraus|etwas) über|was weißt du über|kennst du)\b"],
     "set_goal":       [r"\b(mein ziel ist|ich möchte|ich will|ich plane)\b"],
     "mode_change":    [r"\b(schlafmodus|arbeitsmodus|entspannungsmodus|ruhemodus)\b"],
     "emotion_share":  [r"\b(ich bin (traurig|glücklich|wütend|fröhlich|ängstlich|aufgeregt))\b"],
@@ -194,6 +195,31 @@ class NLPProcessor:
             )
             if mem_match:
                 slots["memory_content"] = mem_match.group(1).strip()
+
+        # Suchanfrage (für search_online UND question-Intent mit "wer/was ist X")
+        if intent in ("search_online", "question"):
+            search_match = re.search(
+                r"(?:such(?:e)?\s+(?:mal\s+)?(?:nach\s+)?|"
+                r"google\s+|suche\s+(?:nach\s+)?|"
+                r"wer\s+ist\s+|was\s+ist\s+|"
+                r"finde\s+(?:heraus|etwas)\s+ueber\s+|"
+                r"finde\s+(?:heraus|etwas)\s+über\s+|"
+                r"was\s+weißt\s+du\s+über\s+|"
+                r"was\s+weisst\s+du\s+ueber\s+|"
+                r"kennst\s+du\s+)"
+                r"(.+?)(?:\?|!|\.|$)",
+                text, re.IGNORECASE,
+            )
+            if search_match:
+                # Gruppe 1 enthält immer die Suchanfrage (nach dem Trigger-Ausdruck)
+                raw_query = search_match.group(1).strip()
+                # Trailing noise-words entfernen ("online", "mal", "bitte")
+                raw_query = re.sub(
+                    r"\s+(?:online|mal|bitte|doch|jetzt)\s*$",
+                    "", raw_query, flags=re.IGNORECASE,
+                ).strip()
+                if raw_query:
+                    slots["search_query"] = raw_query
 
         return slots
 

@@ -97,6 +97,12 @@ class MainLoop:
         person_id = n.person_recognition.identify_from_text(user_input)
         n.context_manager.set_active_person(person_id)
 
+        # 2a. Profil der aktiven Person aus Text anreichern (auto-learning)
+        if n.profile_enricher and person_id:
+            active_person = n.person_recognition.get_active_person()
+            if active_person:
+                n.profile_enricher.enrich_from_text(active_person, user_input)
+
         # 3. Modus ggf. anpassen
         prev_mode = n.mode_manager.name
         switched_mode = n.mode_manager.switch_from_text(user_input)
@@ -173,6 +179,27 @@ class MainLoop:
             nlp_result,
             extra_context={"ltm": ltm_context},
         )
+
+        # 8a. Online-Suche (Kapitel 16.6) – bei expliziter Suchanfrage
+        if nlp_result.slots.get("search_query") and n.web_search:
+            query = nlp_result.slots.get("search_query", "").strip()
+            # Mindestlänge: zu kurze Queries liefern kaum brauchbare Ergebnisse
+            if len(query) >= 3:
+                search_result = n.web_search.search_person(query)
+                formatted = n.web_search.format_result(search_result)
+                # Suchergebnis ins LTM speichern
+                if search_result.get("abstract"):
+                    n.ltm.store(
+                        content=f"Websuche '{query}': {search_result['abstract']}",
+                        category="fact",
+                        importance=0.6,
+                        tags=[query.lower(), "web_search"],
+                    )
+                response = response + "\n\n\U0001f50e **Online gefunden:**\n" + formatted
+            else:
+                logger.debug(
+                    "WebSearch: Suchanfrage zu kurz (%r), \u00fcbersprungen.", query
+                )
 
         # Krisenmodus-Check
         if n.social_safety.in_crisis_mode:

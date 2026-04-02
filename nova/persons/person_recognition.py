@@ -5,8 +5,9 @@ Erkennt, welche Person gerade mit Nova spricht (basierend auf
 Stimme, Name oder selbst angegebenen Informationen) und lädt
 das entsprechende Profil.
 
-Hinweis: Automatisches stilles Profiling unbekannter Dritter
-(Kapitel 16.6) ist bewusst nicht implementiert.
+Neue Personen werden bei expliziter Selbstvorstellung ("ich heiße X")
+automatisch angelegt; stilles Profiling unbekannter Dritter findet
+nicht statt.
 """
 
 from __future__ import annotations
@@ -19,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 # Muster, mit denen ein Nutzer seinen Namen angibt
 _NAME_PATTERNS = [
-    r"(?:ich heiße|ich bin|mein name ist|nennen sie mich|nenn mich)\s+([A-ZÄÖÜ][a-zäöüß]+(?:\s+[A-ZÄÖÜ][a-zäöüß]+)*)",
+    r"(?:ich heiße|ich heisse|ich bin|mein name ist|nennen sie mich|nenn mich)\s+([A-ZÄÖÜ][a-zäöüß]+(?:\s+[A-ZÄÖÜ][a-zäöüß]+)*)",
     r"(?:i am|my name is|call me|i'm)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)",
 ]
 
@@ -84,8 +85,8 @@ class PersonRecognition:
         Analysiert Text nach Selbstidentifikation.
 
         Wenn eine bekannte Person gefunden wird, wird sie als aktiv gesetzt.
-        Wenn eine neue Person erkannt wird, wird auf explizite Bestätigung
-        gewartet (kein automatisches Anlegen).
+        Wenn der Nutzer sich neu vorstellt (``ich heiße X`` / ``mein Name ist X``),
+        wird automatisch ein neues Profil angelegt und aktiviert.
 
         Returns:
             Person-ID oder None.
@@ -100,9 +101,23 @@ class PersonRecognition:
             logger.info("Person erkannt: %s (ID %d).", name, person.id)
             return person.id
 
-        # Unbekannt – kein automatisches Anlegen, nur melden
+        # Selbstvorstellung ("ich heiße X", "mein Name ist X") → auto-registrieren
+        text_lower = text.lower()
+        self_intro = any(
+            pat in text_lower
+            for pat in ("ich heiße", "ich heisse", "mein name ist", "ich bin ")
+        )
+        if self_intro:
+            person = self.register_new_person(name, trust_level=0.8)
+            logger.info(
+                "Neue Person (Selbstvorstellung) angelegt: %s (ID %d).",
+                name, person.id,
+            )
+            return person.id
+
+        # Fremde Person, kein automatisches Anlegen
         logger.info("Unbekannte Person genannt: %r – warte auf Bestätigung.", name)
-        return None
+        return self._active_person_id
 
     def register_new_person(
         self,

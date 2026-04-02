@@ -53,6 +53,8 @@ class Nova:
         self.voice_io = None
         self.local_stt = None
         self.person_recognition = None
+        self.profile_enricher = None
+        self.web_search = None
         self.social_safety = None
         self.api_client = None
         self.ollama = None
@@ -86,9 +88,11 @@ class Nova:
         from nova.voice.voice_io import VoiceIO
         from nova.voice.local_stt import LocalSTT
         from nova.persons.person_recognition import PersonRecognition
+        from nova.persons.profile_enricher import ProfileEnricher
         from nova.safety.social_safety import SocialSafetyLayer
         from nova.api.external_services import ExternalServices
         from nova.api.ollama_client import OllamaClient
+        from nova.api.web_search import WebSearch
         from nova.backup.backup_manager import BackupManager
         from nova.core.main_loop import MainLoop
         from nova.profiles.profile_manager import ProfileManager
@@ -189,6 +193,13 @@ class Nova:
 
         # Externe Dienste (Fallback, falls Ollama nicht verfügbar)
         nova.api_client = ExternalServices(cfg.get("api", {}))
+
+        # Online-Suche (Kapitel 16.6 – kein API-Key erforderlich)
+        web_cfg = cfg.get("web_search", {})
+        nova.web_search = WebSearch(enabled=web_cfg.get("enabled", True))
+
+        # Profil-Anreicherung (Kapitel 16.7 – auto-lernt aus Gesprächen)
+        nova.profile_enricher = ProfileEnricher(nova.ltm)
 
         # Vorschlags-Engine
         nova.suggestion_engine = SuggestionEngine(nova.relationships, nova.goals)
