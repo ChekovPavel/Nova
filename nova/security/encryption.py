@@ -77,8 +77,11 @@ class SecurityManager:
             return self._xor_decrypt(ciphertext)
         try:
             return self._fernet.decrypt(ciphertext.encode()).decode()
-        except Exception:  # InvalidToken oder andere Fehler
-            logger.error("Entschlüsselung fehlgeschlagen.")
+        except InvalidToken:
+            logger.error("Entschlüsselung fehlgeschlagen: ungültiger Token.")
+            return ""
+        except Exception as exc:  # noqa: BLE001  (UnicodeDecodeError, etc.)
+            logger.error("Entschlüsselung fehlgeschlagen: %s", exc)
             return ""
 
     # ------------------------------------------------------------------
