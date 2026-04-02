@@ -9,9 +9,131 @@ die zentrale Nova-Klasse, die alle Subsysteme zusammenhält.
 from __future__ import annotations
 
 import logging
-from typing import Optional
+from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
+
+
+# ------------------------------------------------------------------
+# Konfigurationsvalidierung
+# ------------------------------------------------------------------
+
+_CONFIG_SCHEMA: Dict[str, Dict[str, Any]] = {
+    "db_path": {"type": str, "default": "nova_data.db"},
+    "secret_key": {"type": str, "default": None},
+    "stm_capacity": {"type": int, "default": 20, "min": 1, "max": 500},
+    "backup": {
+        "type": dict,
+        "default": {},
+        "fields": {
+            "enabled": {"type": bool, "default": True},
+            "dir": {"type": str, "default": "~/nova_backups"},
+            "max_backups": {"type": int, "default": 30, "min": 1, "max": 365},
+            "interval_sec": {"type": (int, float), "default": 3600, "min": 60},
+        },
+    },
+    "ollama": {
+        "type": dict,
+        "default": {},
+        "fields": {
+            "host": {"type": str, "default": "http://localhost:11434"},
+            "model": {"type": str, "default": "llama3.2:1b"},
+            "temperature": {"type": (int, float), "default": 0.7, "min": 0.0, "max": 2.0},
+            "max_tokens": {"type": int, "default": 512, "min": 1},
+        },
+    },
+    "voice": {"type": dict, "default": {}},
+    "api": {"type": dict, "default": {}},
+    "local_stt": {"type": dict, "default": {}},
+    "web_search": {"type": dict, "default": {}},
+}
+
+
+def validate_config(cfg: dict) -> dict:
+    """
+    Validiert und ergänzt fehlende Standardwerte in der Konfiguration.
+
+    Ungültige Werte werden durch Standardwerte ersetzt und geloggt.
+    Gibt die bereinigte Konfiguration zurück.
+    """
+    validated = dict(cfg)
+
+    for key, spec in _CONFIG_SCHEMA.items():
+        value = validated.get(key)
+        expected_type = spec["type"]
+        default = spec["default"]
+
+        # Fehlende Schlüssel → Standardwert
+        if value is None and key not in validated:
+            validated[key] = default
+            continue
+
+        # Typprüfung (None-Werte erlaubt falls default=None)
+        if value is not None and not isinstance(value, expected_type):
+            logger.warning(
+                "Konfiguration: %r hat ungültigen Typ %s (erwartet %s), "
+                "verwende Standard %r",
+                key, type(value).__name__,
+                expected_type.__name__ if isinstance(expected_type, type)
+                else str(expected_type),
+                default,
+            )
+            validated[key] = default
+            continue
+
+        # Wertebereichsprüfung für numerische Felder
+        if isinstance(value, (int, float)):
+            min_val = spec.get("min")
+            max_val = spec.get("max")
+            if min_val is not None and value < min_val:
+                logger.warning(
+                    "Konfiguration: %r=%r unter Minimum %r, verwende Minimum",
+                    key, value, min_val,
+                )
+                validated[key] = min_val
+            elif max_val is not None and value > max_val:
+                logger.warning(
+                    "Konfiguration: %r=%r über Maximum %r, verwende Maximum",
+                    key, value, max_val,
+                )
+                validated[key] = max_val
+
+        # Unter-Schema für verschachtelte Dicts
+        if isinstance(value, dict) and "fields" in spec:
+            for sub_key, sub_spec in spec["fields"].items():
+                sub_val = value.get(sub_key)
+                sub_default = sub_spec["default"]
+                sub_type = sub_spec["type"]
+
+                if sub_val is None and sub_key not in value:
+                    continue  # Standardwerte werden von den Subsystemen gesetzt
+
+                if sub_val is not None and not isinstance(sub_val, sub_type):
+                    logger.warning(
+                        "Konfiguration: %s.%s hat ungültigen Typ, "
+                        "verwende Standard %r",
+                        key, sub_key, sub_default,
+                    )
+                    value[sub_key] = sub_default
+                    continue
+
+                if isinstance(sub_val, (int, float)):
+                    sub_min = sub_spec.get("min")
+                    sub_max = sub_spec.get("max")
+                    if sub_min is not None and sub_val < sub_min:
+                        logger.warning(
+                            "Konfiguration: %s.%s=%r unter Minimum %r",
+                            key, sub_key, sub_val, sub_min,
+                        )
+                        value[sub_key] = sub_min
+                    elif sub_max is not None and sub_val > sub_max:
+                        logger.warning(
+                            "Konfiguration: %s.%s=%r über Maximum %r",
+                            key, sub_key, sub_val, sub_max,
+                        )
+                        value[sub_key] = sub_max
+
+    return validated
 
 
 class Nova:
@@ -99,7 +221,8 @@ class Nova:
         from nova.suggestions.suggestion_engine import SuggestionEngine
 
         nova = cls(config)
-        cfg = nova.config
+        cfg = validate_config(nova.config)
+        nova.config = cfg
 
         logger.info("Nova wird initialisiert …")
 

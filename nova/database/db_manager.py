@@ -13,7 +13,8 @@ import logging
 import os
 import sqlite3
 import threading
-from typing import Any, Dict, List, Optional, Tuple
+from contextlib import contextmanager
+from typing import Any, Dict, Iterator, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -190,6 +191,30 @@ class DatabaseManager:
             )
             self._conn.commit()
             return cur.rowcount
+
+    # ------------------------------------------------------------------
+    # Transaktionen
+    # ------------------------------------------------------------------
+
+    @contextmanager
+    def transaction(self) -> Iterator[None]:
+        """
+        Kontextmanager für Transaktionen mit automatischem Rollback.
+
+        Verwendung::
+
+            with db.transaction():
+                db.execute("INSERT …", commit=False)
+                db.execute("UPDATE …", commit=False)
+            # → automatisch COMMIT bei Erfolg, ROLLBACK bei Exception
+        """
+        with self._lock:
+            try:
+                yield
+                self._conn.commit()
+            except Exception:
+                self._conn.rollback()
+                raise
 
     # ------------------------------------------------------------------
     # JSON-Helfer

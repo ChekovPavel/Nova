@@ -1,0 +1,24 @@
+# ──────────────────────────────────────────────────────────
+# Nova – docker-compose.yml
+# ──────────────────────────────────────────────────────────
+services:
+  nova:
+    build: .
+    container_name: nova
+    restart: unless-stopped
+    volumes:
+      - nova_data:/home/nova/nova_data
+      - nova_backups:/home/nova/nova_backups
+      - ./config.json:/home/nova/app/config.json:ro
+    environment:
+      - NOVA_SECRET_KEY=${NOVA_SECRET_KEY:-}
+      - NOVA_LLM_API_KEY=${NOVA_LLM_API_KEY:-}
+      - NOVA_LLM_ENDPOINT=${NOVA_LLM_ENDPOINT:-}
+    stdin_open: true
+    tty: true
+    mem_limit: 3g
+    cpus: 2.0
+
+volumes:
+  nova_data:
+  nova_backups:

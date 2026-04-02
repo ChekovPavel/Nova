@@ -14,6 +14,9 @@ from typing import List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
+# Maximale Eingabelänge (Zeichen) – Schutz vor DoS
+_MAX_INPUT_LENGTH = 10_000
+
 
 # Kritische Muster für Eingaben
 _BLOCKED_INPUT_PATTERNS: List[Tuple[str, str]] = [
@@ -75,6 +78,15 @@ class SocialSafetyLayer:
             True wenn OK, False wenn blockiert.
         """
         text_lower = text.lower()
+
+        # Eingabelänge begrenzen (DoS-Schutz)
+        if len(text) > _MAX_INPUT_LENGTH:
+            self._block_count += 1
+            logger.warning(
+                "Eingabe blockiert (zu lang: %d Zeichen, max %d)",
+                len(text), _MAX_INPUT_LENGTH,
+            )
+            return False
 
         for pattern, reason in _BLOCKED_INPUT_PATTERNS:
             if re.search(pattern, text_lower, re.IGNORECASE):
