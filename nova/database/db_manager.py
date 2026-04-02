@@ -168,7 +168,7 @@ class DatabaseManager:
             return self._conn.execute(sql, params).fetchone()
 
     def insert(self, table: str, data: Dict[str, Any]) -> int:
-        cols = ", ".join(data.keys())
+        cols = ", ".join(f'"{k.replace(chr(34), chr(34) * 2)}"' for k in data.keys())
         placeholders = ", ".join("?" * len(data))
         sql = f"INSERT INTO {table} ({cols}) VALUES ({placeholders})"
         with self._lock:
@@ -183,7 +183,7 @@ class DatabaseManager:
         where: str,
         where_params: Tuple = (),
     ) -> int:
-        sets = ", ".join(f"{k}=?" for k in data.keys())
+        sets = ", ".join(f'"{k.replace(chr(34), chr(34) * 2)}"=?' for k in data.keys())
         sql = f"UPDATE {table} SET {sets} WHERE {where}"
         with self._lock:
             cur = self._conn.execute(

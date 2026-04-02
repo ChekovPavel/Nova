@@ -113,13 +113,14 @@ class MainLoop:
         if prev_mode == "meeting" and current_mode != "meeting":
             meeting_entries = n.stm.get_recent(_MAX_MEETING_ENTRIES_FOR_SUMMARY, entry_type="message")
             meeting_summary = n.reflection.summarize_meeting(meeting_entries)
-            n.ltm.store(
-                meeting_summary,
-                category="meeting",
-                importance=0.8,
-                tags=["meeting", "summary", "profile:work"],
-            )
-            logger.info("Meeting-Zusammenfassung gespeichert.")
+            if meeting_summary:
+                n.ltm.store(
+                    meeting_summary,
+                    category="meeting",
+                    importance=0.8,
+                    tags=["meeting", "summary", "profile:work"],
+                )
+                logger.info("Meeting-Zusammenfassung gespeichert.")
 
         # 3b. Kontextprofil wechseln (privat ↔ Arbeit)
         if n.profile_manager:

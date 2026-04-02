@@ -214,12 +214,11 @@ class BackupManager:
         """Löscht älteste Backups, wenn max_backups überschritten."""
         pattern = "nova_backup_*.db.gz"
         backups = sorted(Path(directory).glob(pattern))
-        while len(backups) > self.max_backups:
-            oldest = backups.pop(0)
-            oldest.unlink(missing_ok=True)
-            checksum = Path(str(oldest) + ".sha256")
+        for old_backup in backups[: max(0, len(backups) - self.max_backups)]:
+            old_backup.unlink(missing_ok=True)
+            checksum = Path(str(old_backup) + ".sha256")
             checksum.unlink(missing_ok=True)
-            logger.debug("Altes Backup gelöscht: %s", oldest.name)
+            logger.debug("Altes Backup gelöscht: %s", old_backup.name)
 
     # ------------------------------------------------------------------
     # Wiederherstellung

@@ -318,5 +318,7 @@ class ResponseGenerator:
         # Concise: lange Texte kürzen (Heuristik)
         if style["verbosity"] == "concise" and len(text) > 200:
             sentences = text.split(". ")
-            text = ". ".join(sentences[:2]) + ("." if len(sentences) > 2 else "")
+            text = ". ".join(sentences[:2])
+            if len(sentences) > 2:
+                text += "."
         return text

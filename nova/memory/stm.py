@@ -9,6 +9,7 @@ Einträge haben ein Ablaufdatum (time-to-live) und einen Relevanz-Score.
 from __future__ import annotations
 
 import logging
+import threading
 import time
 from collections import deque
 from dataclasses import dataclass, field
@@ -50,6 +51,7 @@ class ShortTermMemory:
     def __init__(self, capacity: int = 20) -> None:
         self.capacity = capacity
         self._buffer: Deque[STMEntry] = deque(maxlen=capacity)
+        self._lock = threading.Lock()
 
     # ------------------------------------------------------------------
     # Hinzufügen
@@ -129,19 +131,21 @@ class ShortTermMemory:
 
     def purge(self) -> int:
         """Entfernt abgelaufene Einträge.  Gibt Anzahl zurück."""
-        before = len(self._buffer)
-        self._buffer = deque(
-            (e for e in self._buffer if not e.is_expired),
-            maxlen=self.capacity,
-        )
-        removed = before - len(self._buffer)
+        with self._lock:
+            before = len(self._buffer)
+            self._buffer = deque(
+                (e for e in self._buffer if not e.is_expired),
+                maxlen=self.capacity,
+            )
+            removed = before - len(self._buffer)
         if removed:
             logger.debug("STM: %d abgelaufene Einträge entfernt.", removed)
         return removed
 
     def clear(self) -> None:
         """Löscht das gesamte STM (z. B. beim Sitzungsende)."""
-        self._buffer.clear()
+        with self._lock:
+            self._buffer.clear()
 
     # ------------------------------------------------------------------
     # Eigenschaften

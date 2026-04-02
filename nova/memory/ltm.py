@@ -125,11 +125,14 @@ class LongTermMemory:
             params.extend([q, q])
 
         if profile_tag:
-            # Erinnerungen mit passendem Profil-Tag ODER ohne jeglichen Profil-Tag
+            # Erinnerungen mit passendem Profil-Tag ODER ohne jeglichen Profil-Tag.
+            # Tags werden als JSON-Array gespeichert, z. B. ["profile:work", "..."].
+            # Durch Suche nach `"profile_tag"` (mit JSON-Anführungszeichen) werden
+            # Partial-Matches wie 'profile:workplace' sicher ausgeschlossen.
             sql_parts.append(
-                "AND (tags LIKE ? OR tags NOT LIKE '%profile:%')"
+                'AND (tags LIKE ? OR tags NOT LIKE \'%"profile:%\')'
             )
-            params.append(f"%{profile_tag}%")
+            params.append(f'%"{profile_tag}"%')
 
         sql_parts.append("ORDER BY importance DESC, access_count DESC LIMIT ?")
         params.append(limit)
