@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import logging
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -21,6 +22,8 @@ from typing import Any, Dict, List, Optional
 logger = logging.getLogger(__name__)
 
 _TIMEOUT = 10  # Sekunden
+_MAX_RETRIES = 3  # Standardanzahl Wiederholungsversuche
+_BACKOFF_BASE = 2  # Basis für exponentielles Backoff (Sekunden)
 
 
 class ExternalServices:
@@ -134,36 +137,66 @@ class ExternalServices:
     # Generische HTTP-Helfer
     # ------------------------------------------------------------------
 
-    def _get_json(self, url: str) -> Optional[Dict]:
-        """Führt eine GET-Anfrage aus und gibt JSON zurück."""
-        try:
-            req = urllib.request.Request(url)
-            with urllib.request.urlopen(req, timeout=_TIMEOUT) as resp:
-                return json.loads(resp.read().decode())
-        except urllib.error.URLError as exc:
-            logger.error("HTTP GET fehlgeschlagen: %s", exc)
-            return None
+    def _get_json(
+        self, url: str, max_retries: int = _MAX_RETRIES,
+    ) -> Optional[Dict]:
+        """Führt eine GET-Anfrage aus und gibt JSON zurück (mit Retry)."""
+        for attempt in range(max_retries):
+            try:
+                req = urllib.request.Request(url)
+                with urllib.request.urlopen(req, timeout=_TIMEOUT) as resp:
+                    return json.loads(resp.read().decode())
+            except urllib.error.URLError as exc:
+                if attempt < max_retries - 1:
+                    wait = _BACKOFF_BASE ** attempt
+                    logger.warning(
+                        "HTTP GET Versuch %d/%d fehlgeschlagen, "
+                        "erneuter Versuch in %ds: %s",
+                        attempt + 1, max_retries, wait, exc,
+                    )
+                    time.sleep(wait)
+                else:
+                    logger.error(
+                        "HTTP GET fehlgeschlagen nach %d Versuchen: %s",
+                        max_retries, exc,
+                    )
+        return None
 
     def _post_json(
         self,
         url: str,
         data: Dict,
         headers: Optional[Dict[str, str]] = None,
+        max_retries: int = _MAX_RETRIES,
     ) -> Optional[Dict]:
-        """Führt eine POST-Anfrage mit JSON-Body aus."""
+        """Führt eine POST-Anfrage mit JSON-Body aus (mit Retry)."""
         body = json.dumps(data).encode()
         req_headers = {"Content-Type": "application/json"}
         if headers:
             req_headers.update(headers)
-        req = urllib.request.Request(
-            url, data=body, headers=req_headers, method="POST"
-        )
-        try:
-            with urllib.request.urlopen(req, timeout=_TIMEOUT) as resp:
-                return json.loads(resp.read().decode())
-        except urllib.error.URLError as exc:
-            logger.error("HTTP POST fehlgeschlagen: %s", exc)
-            return None
+
+        for attempt in range(max_retries):
+            req = urllib.request.Request(
+                url, data=body, headers=req_headers, method="POST"
+            )
+            try:
+                with urllib.request.urlopen(req, timeout=_TIMEOUT) as resp:
+                    return json.loads(resp.read().decode())
+            except urllib.error.URLError as exc:
+                if attempt < max_retries - 1:
+                    wait = _BACKOFF_BASE ** attempt
+                    logger.warning(
+                        "HTTP POST Versuch %d/%d fehlgeschlagen, "
+                        "erneuter Versuch in %ds: %s",
+                        attempt + 1, max_retries, wait, exc,
+                    )
+                    time.sleep(wait)
+                else:
+                    logger.error(
+                        "HTTP POST fehlgeschlagen nach %d Versuchen: %s",
+                        max_retries, exc,
+                    )
+        return None
 
     # ------------------------------------------------------------------
     # Kalender-Integration (Stub – Google Calendar / iCal)

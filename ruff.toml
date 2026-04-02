@@ -1,0 +1,31 @@
+# Nova – Ruff-Konfiguration
+# https://docs.astral.sh/ruff/
+
+[lint]
+select = [
+    "E",     # pycodestyle errors
+    "W",     # pycodestyle warnings
+    "F",     # pyflakes
+    "I",     # isort
+    "UP",    # pyupgrade
+    "B",     # flake8-bugbear
+    "SIM",   # flake8-simplify
+    "RUF",   # ruff-specific
+]
+ignore = [
+    "E501",   # Zeilenlänge – wird separat gehandhabt
+    "B905",   # `zip()` without `strict=` (Python 3.10+)
+    "SIM108", # Ternary operator – nicht immer lesbarer
+    "UP007",  # Use X | Y for union types (needs 3.10+)
+]
+
+[lint.per-file-ignores]
+"tests/*" = ["B011", "SIM300"]
+
+[format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
+
+[lint.isort]
+known-first-party = ["nova"]
