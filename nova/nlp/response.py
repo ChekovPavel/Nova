@@ -26,10 +26,11 @@ class ResponseGenerator:
 
     Strategie:
     1. SocialSafetyLayer prüft Eingabe und Ausgabe
-    2. Ollama (lokales LLM) wird bevorzugt genutzt – für alle Intents
-    3. Fallback: regelbasierte Antworten (keine LLM nötig)
-    4. Persönlichkeitsstil und Emotionszustand werden eingebaut
-    5. Externer LLM-Client als letzter Fallback (z. B. OpenAI)
+    2. Nova Engine (on-device, kein HTTP) wird als erstes versucht
+    3. Ollama (lokales LLM) als zweite Wahl
+    4. Externer LLM-Client als dritter Fallback (z. B. OpenAI)
+    5. Regelbasierte Antworten als letzter Fallback (immer verfügbar)
+    6. Persönlichkeitsstil und Emotionszustand werden eingebaut
     """
 
     # Intents, die immer regelbasiert beantwortet werden (kein LLM nötig)
@@ -43,13 +44,15 @@ class ResponseGenerator:
         social_safety,
         llm_client=None,
         ollama_client=None,
+        nova_engine_client=None,
     ) -> None:
         self._personality = personality
         self._emotion = emotion
         self._context = context_manager
         self._safety = social_safety
-        self._llm = llm_client        # externer LLM (OpenAI-kompatibel)
-        self._ollama = ollama_client  # lokales LLM (Ollama)
+        self._llm = llm_client               # externer LLM (OpenAI-kompatibel)
+        self._ollama = ollama_client          # lokales LLM (Ollama)
+        self._nova_engine = nova_engine_client  # on-device Inferenz-Engine (Tier 0)
 
     # ------------------------------------------------------------------
     # Hauptmethode
@@ -64,7 +67,7 @@ class ResponseGenerator:
         Erzeugt eine Antwort auf ein NLPResult.
 
         Priorität der LLM-Nutzung:
-          Ollama (lokal) → externer LLM → Regelantwort
+          Nova Engine (on-device) → Ollama (lokal) → externer LLM → Regelantwort
 
         Args:
             nlp_result:    Ergebnis aus NLPProcessor.process().
@@ -79,6 +82,21 @@ class ResponseGenerator:
 
         # Für einfache Intents immer Regelantwort (schneller)
         if nlp_result.intent not in self._RULE_ONLY_INTENTS:
+            # Priorität 0: Nova Engine (on-device, kein HTTP-Overhead)
+            if self._nova_engine and self._nova_engine.is_alive():
+                context_snapshot = self._context.snapshot()
+                history = self._build_ollama_history(context_snapshot)
+                extra_sys = self._build_extra_system(context_snapshot, extra_context)
+                response = self._nova_engine.chat(
+                    user_input=nlp_result.raw_text,
+                    history=history,
+                    extra_system=extra_sys,
+                )
+                if response:
+                    response = self._apply_style(response)
+                    if self._safety.check_output(response):
+                        return response
+
             # Priorität 1: Ollama (lokales LLM)
             if self._ollama and self._ollama.is_alive():
                 context_snapshot = self._context.snapshot()

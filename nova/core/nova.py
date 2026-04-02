@@ -42,6 +42,7 @@ _CONFIG_SCHEMA: Dict[str, Dict[str, Any]] = {
             "max_tokens": {"type": int, "default": 512, "min": 1},
         },
     },
+    "nova_engine": {"type": dict, "default": {}},
     "voice": {"type": dict, "default": {}},
     "api": {"type": dict, "default": {}},
     "local_stt": {"type": dict, "default": {}},
@@ -180,6 +181,7 @@ class Nova:
         self.social_safety = None
         self.api_client = None
         self.ollama = None
+        self.nova_engine = None
         self.backup = None
         self.main_loop = None
         self.gui = None
@@ -213,6 +215,7 @@ class Nova:
         from nova.persons.profile_enricher import ProfileEnricher
         from nova.safety.social_safety import SocialSafetyLayer
         from nova.api.external_services import ExternalServices
+        from nova.api.nova_engine_client import NovaEngineClient
         from nova.api.ollama_client import OllamaClient
         from nova.api.web_search import WebSearch
         from nova.backup.backup_manager import BackupManager
@@ -279,12 +282,20 @@ class Nova:
         else:
             logger.info("Ollama nicht verfügbar – Fallback auf Regelantworten.")
 
+        # On-device Inferenz-Engine (Tier 0 - kein HTTP-Overhead)
+        nova.nova_engine = NovaEngineClient(cfg)
+        if nova.nova_engine.is_alive():
+            logger.info("Nova Engine bereit (on-device Inferenz aktiviert).")
+        else:
+            logger.info("Nova Engine nicht verfügbar - weiter mit Ollama/Regelantworten.")
+
         nova.response_generator = ResponseGenerator(
             nova.personality,
             nova.emotion,
             nova.context_manager,
             nova.social_safety,
             ollama_client=nova.ollama,
+            nova_engine_client=nova.nova_engine,
         )
 
         # Lernen, Ziele, Reflexion
