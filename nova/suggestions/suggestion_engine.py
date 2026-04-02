@@ -251,7 +251,7 @@ class SuggestionEngine:
         """
         tasks: List[str] = []
         try:
-            open_goals = self._goals.list_goals(status="open")
+            open_goals = self._goals.get_active_goals()
             for goal in open_goals[:max_tasks]:
                 tasks.append(goal.title)
         except Exception as exc:

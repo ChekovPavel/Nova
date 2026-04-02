@@ -128,8 +128,10 @@ class MainLoop:
         if n.mode_manager.is_sleeping():
             return "Ich bin im Schlafmodus. Sage 'Normalmodus' zum Aufwecken."
 
-        # 4. Emotionen reagieren lassen
+        # 4. Emotionen reagieren lassen (Keyword + Sentiment)
         n.emotion.react_to_text(user_input, intensity=0.3)
+        if nlp_result.sentiment != 0.0:
+            n.emotion.react_to_sentiment(nlp_result.sentiment, intensity=0.25)
 
         # 5. Relevanz-Score berechnen & STM speichern (profilbewusst)
         relevance = n.relevance_filter.score(user_input)

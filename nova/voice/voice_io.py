@@ -51,6 +51,7 @@ class VoiceIO:
         self._tts_engine = None
         self._tts_lock = threading.Lock()
         self._running = True
+        self._local_stt = None  # wird ggf. via set_local_stt() gesetzt
 
         if _TTS_AVAILABLE and self._enabled:
             self._init_tts()
@@ -126,32 +127,55 @@ class VoiceIO:
         """
         Hört auf Spracheingabe und gibt erkannten Text zurück.
 
+        Priorität:
+        1. Google Speech Recognition (online, hohe Genauigkeit)
+        2. Lokales STT via LocalSTT (offline, Whisper / Vosk)
+
         Args:
             timeout: Maximale Wartezeit in Sekunden.
 
         Returns:
             Erkannter Text oder None bei Fehler.
         """
-        if not self._enabled or not _STT_AVAILABLE or not self._microphone:
+        if not self._enabled:
             return None
 
-        try:
-            with self._microphone as source:
-                self._recognizer.adjust_for_ambient_noise(source, duration=0.3)
-                logger.debug("Mikrofon aktiv, höre …")
-                audio = self._recognizer.listen(source, timeout=timeout)
-            text = self._recognizer.recognize_google(
-                audio, language=self._language
-            )
-            logger.debug("STT erkannt: %r", text)
-            return text
-        except Exception as exc:
-            logger.debug("STT-Fehler: %s", exc)
-            return None
+        # Priorität 1: Google STT
+        if _STT_AVAILABLE and self._microphone:
+            try:
+                with self._microphone as source:
+                    self._recognizer.adjust_for_ambient_noise(source, duration=0.3)
+                    logger.debug("Mikrofon aktiv, höre …")
+                    audio = self._recognizer.listen(source, timeout=timeout)
+                text = self._recognizer.recognize_google(
+                    audio, language=self._language
+                )
+                logger.debug("STT erkannt (Google): %r", text)
+                return text
+            except Exception as exc:
+                logger.debug("Google-STT fehlgeschlagen: %s", exc)
+
+        # Priorität 2: Lokales STT (Whisper / Vosk)
+        if self._local_stt and self._local_stt.available:
+            try:
+                text = self._local_stt.recognize_from_mic(duration=timeout)
+                if text:
+                    logger.debug("STT erkannt (lokal/%s): %r", self._local_stt.backend_name, text)
+                    return text
+            except Exception as exc:
+                logger.debug("Lokales STT fehlgeschlagen: %s", exc)
+
+        return None
 
     # ------------------------------------------------------------------
     # Einstellungen
     # ------------------------------------------------------------------
+
+    def set_local_stt(self, local_stt) -> None:
+        """Registriert eine LocalSTT-Instanz als Offline-Fallback."""
+        self._local_stt = local_stt
+        if local_stt and local_stt.available:
+            logger.info("Lokales STT registriert: %s", local_stt.backend_name)
 
     def set_rate(self, rate: int) -> None:
         self._tts_rate = rate
@@ -187,4 +211,6 @@ class VoiceIO:
 
     @property
     def stt_available(self) -> bool:
-        return self._recognizer is not None
+        return self._recognizer is not None or (
+            self._local_stt is not None and self._local_stt.available
+        )

@@ -185,6 +185,7 @@ class Nova:
         )
         if nova.local_stt.available:
             logger.info("Lokales STT verfügbar: %s", nova.local_stt.backend_name)
+            nova.voice_io.set_local_stt(nova.local_stt)
 
         # Externe Dienste (Fallback, falls Ollama nicht verfügbar)
         nova.api_client = ExternalServices(cfg.get("api", {}))
