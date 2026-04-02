@@ -6,11 +6,31 @@ Unterstützt getrennte Kontextprofile für **Dating** und **Arbeit**.
 
 ## Schnellstart
 
+Für die **vollständige Einrichtungsanleitung** (inkl. beste KI-Modell-Empfehlung,
+Ollama-Setup, Konfiguration und Troubleshooting) siehe **[SETUP.md](SETUP.md)**.
+
+### Schnelle Installation
+
 ```bash
-pip install cryptography          # optional: starke Verschlüsselung
-python main.py                    # Konsolenmodus
-python main.py --gui              # GUI (Tkinter)
-python main.py --config cfg.json  # eigene Konfiguration
+git clone https://github.com/ChekovPavel/Nova.git
+cd Nova
+chmod +x scripts/setup.sh
+./scripts/setup.sh              # Automatisches Setup (empfohlen)
+```
+
+Oder manuell:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate       # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+cp config.json.example config.json
+# Secret Key generieren und in config.json eintragen:
+openssl rand -hex 32
+# Ollama installieren und Modell laden:
+# https://ollama.ai  →  ollama pull llama3.1:8b
+python main.py                  # Konsolenmodus
+python main.py --gui            # GUI (Tkinter)
 ```
 
 ## Architektur (Kapitelübersicht)
