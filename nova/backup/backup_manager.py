@@ -56,7 +56,7 @@ class BackupManager:
         enabled: bool = True,
     ) -> None:
         self.db_path = os.path.abspath(db_path)
-        self.backup_dir = os.path.abspath(backup_dir)
+        self.backup_dir = os.path.abspath(os.path.expanduser(backup_dir))
         self.daily_dir = os.path.join(self.backup_dir, "daily")
         self.max_backups = max_backups
         self.interval_sec = interval_sec

@@ -10,6 +10,7 @@ config.json            # enthält secret_key und API-Schlüssel
 *.db-wal               # SQLite WAL Log
 nova_data/             # lokales Datenverzeichnis (falls im Repo-Ordner)
 nova_backups/          # Backup-Verzeichnis (falls im Repo-Ordner)
+/~/                    # versehentlich angelegtes Tilde-Verzeichnis (BackupManager-Bug)
 
 # -----------------------------------------------------------------------
 # Python

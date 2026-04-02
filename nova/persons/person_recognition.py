@@ -18,11 +18,43 @@ from typing import Dict, Optional
 
 logger = logging.getLogger(__name__)
 
-# Muster, mit denen ein Nutzer seinen Namen angibt
-_NAME_PATTERNS = [
-    r"(?:ich heiße|ich heisse|ich bin|mein name ist|nennen sie mich|nenn mich)\s+([A-ZÄÖÜ][a-zäöüß]+(?:\s+[A-ZÄÖÜ][a-zäöüß]+)*)",
-    r"(?:i am|my name is|call me|i'm)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)",
+# Muster für eindeutige Namensangaben (IGNORECASE – Nutzer kann klein schreiben)
+_NAME_PATTERNS_IGNORECASE = [
+    r"(?:ich heiße|ich heisse|mein name ist|nennen sie mich|nenn mich)\s+"
+    r"([A-ZÄÖÜ][a-zäöüß]+(?:\s+[A-ZÄÖÜ][a-zäöüß]+)*)",
+    r"(?:my name is|call me|i'm)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)",
 ]
+
+# Muster für "ich bin X" / "i am X" – case-SENSITIV, damit Adjektive wie
+# "traurig", "glücklich", "müde" NICHT als Namen erkannt werden.
+# Trifft nur, wenn das erste Zeichen nach "ich bin" ein Großbuchstabe ist
+# (= echte Eigennamen wie "Max", "Lena", "Tim").
+_NAME_PATTERNS_CASESENSITIVE = [
+    r"ich bin\s+([A-ZÄÖÜ][a-zäöüß]+(?:\s+[A-ZÄÖÜ][a-zäöüß]+)*)",
+    r"i am\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)",
+]
+
+# Bekannte Nicht-Namen: Adjektive, Zustände, Berufe und Nationalitäten,
+# die nach "ich bin" / "i am" häufig vorkommen und kein Personenname sind.
+# Schützt vor Fehlregistrierungen, wenn "ich bin" mit Kleinschreibung
+# und case-sensitiver Prüfung NICHT greift (z. B. "ich bin max").
+_NOT_A_NAME: set = {
+    # Emotionen / Befindlichkeiten
+    "traurig", "glücklich", "froh", "wütend", "ängstlich",
+    "aufgeregt", "müde", "hungrig", "durstig", "krank", "fit",
+    "nervös", "gestresst", "entspannt", "besorgt", "einsam", "allein",
+    # Berufe
+    "ingenieur", "arzt", "ärztin", "lehrer", "lehrerin", "student",
+    "studentin", "schüler", "schülerin", "chef", "chefin",
+    "entwickler", "entwicklerin", "designer", "designerin", "rentner",
+    # Nationalitäten / Herkunft
+    "deutscher", "deutsche", "österreicher", "österreicherin",
+    "schweizer", "schweizerin", "türke", "türkin", "franzose",
+    "amerikaner", "amerikanerin", "brite", "britin",
+    # Sonstiges
+    "hier", "da", "toll", "gut", "schlecht", "schön", "fertig",
+    "bereit", "sicher", "unsicher",
+}
 
 
 class PersonRecognition:
@@ -67,13 +99,42 @@ class PersonRecognition:
         """
         Versucht, einen Eigennamen aus dem Text zu extrahieren.
 
+        Drei Stufen:
+        1. IGNORECASE – eindeutige Phrasen ("ich heiße X", "mein Name ist X"):
+           auch bei Kleinschreibung erkannt.
+        2. Case-SENSITIV – "ich bin X": nur wenn X mit Großbuchstaben beginnt
+           (echter Eigenname), damit Adjektive wie "traurig" ausgeschlossen werden.
+        3. IGNORECASE-Fallback für "ich bin X" (Kleinschreibung, z. B. "ich bin max"):
+           nur wenn X nicht in der bekannten Nicht-Namen-Liste steht.
+
         Returns:
             Erkannter Name oder None.
         """
-        for pattern in _NAME_PATTERNS:
+        # Stufe 1: eindeutige Namensphransen (IGNORECASE)
+        for pattern in _NAME_PATTERNS_IGNORECASE:
             m = re.search(pattern, text, re.IGNORECASE)
             if m:
                 return m.group(1).strip()
+
+        # Stufe 2: "ich bin / i am X" – case-SENSITIV (Großbuchstabe = echter Name)
+        for pattern in _NAME_PATTERNS_CASESENSITIVE:
+            m = re.search(pattern, text)
+            if m:
+                return m.group(1).strip()
+
+        # Stufe 3: "ich bin x" (Kleinschreibung, einzelnes Wort) –
+        # nur wenn x kein bekanntes Nicht-Name ist.
+        # Nur Einzelwort-Namen erlaubt (zwei Wörter müssen großgeschrieben sein).
+        ic_bin = re.search(
+            r"(?:ich bin|i am)\s+([a-zäöüß]+)\s*$",
+            text.lower(),
+        )
+        if ic_bin:
+            candidate = ic_bin.group(1).strip()
+            if candidate not in _NOT_A_NAME:
+                # Ersten Buchstaben groß schreiben (normalisierter Name)
+                return candidate[0].upper() + candidate[1:]
+
         return None
 
     # ------------------------------------------------------------------
