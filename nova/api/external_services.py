@@ -17,7 +17,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -34,14 +34,14 @@ class ExternalServices:
     Es werden keine Secrets in Logs geschrieben.
     """
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
+    def __init__(self, config: dict[str, Any] | None = None) -> None:
         cfg = config or {}
-        self._llm_endpoint: Optional[str] = cfg.get("llm_endpoint")
-        self._llm_api_key: Optional[str] = cfg.get("llm_api_key")
+        self._llm_endpoint: str | None = cfg.get("llm_endpoint")
+        self._llm_api_key: str | None = cfg.get("llm_api_key")
         self._llm_model: str = cfg.get("llm_model", "gpt-3.5-turbo")
-        self._weather_api_key: Optional[str] = cfg.get("weather_api_key")
-        self._calendar_endpoint: Optional[str] = cfg.get("calendar_endpoint")
-        self._calendar_api_key: Optional[str] = cfg.get("calendar_api_key")
+        self._weather_api_key: str | None = cfg.get("weather_api_key")
+        self._calendar_endpoint: str | None = cfg.get("calendar_endpoint")
+        self._calendar_api_key: str | None = cfg.get("calendar_api_key")
         self._enabled: bool = cfg.get("enabled", True)
 
     # ------------------------------------------------------------------
@@ -51,14 +51,14 @@ class ExternalServices:
     def complete(
         self,
         user_input: str,
-        context: Optional[Dict] = None,
+        context: dict | None = None,
         system_prompt: str = (
             "Du bist Nova, ein freundlicher, empathischer persönlicher "
             "KI-Assistent. Antworte hilfreich, ehrlich und warmherzig."
         ),
         max_tokens: int = 512,
         temperature: float = 0.7,
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Ruft ein LLM-Backend (OpenAI-kompatibel) auf.
 
@@ -106,7 +106,7 @@ class ExternalServices:
     # Wetter
     # ------------------------------------------------------------------
 
-    def get_weather(self, city: str) -> Optional[str]:
+    def get_weather(self, city: str) -> str | None:
         """
         Ruft aktuelle Wetterdaten für eine Stadt ab (OpenWeatherMap).
 
@@ -139,7 +139,7 @@ class ExternalServices:
 
     def _get_json(
         self, url: str, max_retries: int = _MAX_RETRIES,
-    ) -> Optional[Dict]:
+    ) -> dict | None:
         """Führt eine GET-Anfrage aus und gibt JSON zurück (mit Retry)."""
         for attempt in range(max_retries):
             try:
@@ -165,10 +165,10 @@ class ExternalServices:
     def _post_json(
         self,
         url: str,
-        data: Dict,
-        headers: Optional[Dict[str, str]] = None,
+        data: dict,
+        headers: dict[str, str] | None = None,
         max_retries: int = _MAX_RETRIES,
-    ) -> Optional[Dict]:
+    ) -> dict | None:
         """Führt eine POST-Anfrage mit JSON-Body aus (mit Retry)."""
         body = json.dumps(data).encode()
         req_headers = {"Content-Type": "application/json"}
@@ -204,9 +204,9 @@ class ExternalServices:
 
     def get_calendar_events(
         self,
-        date_str: Optional[str] = None,
-        calendar_url: Optional[str] = None,
-    ) -> Optional[List[Dict[str, Any]]]:
+        date_str: str | None = None,
+        calendar_url: str | None = None,
+    ) -> list[dict[str, Any]] | None:
         """
         Ruft Kalendereinträge ab.
 
@@ -246,8 +246,8 @@ class ExternalServices:
         start: str,
         end: str,
         description: str = "",
-        calendar_url: Optional[str] = None,
-    ) -> Optional[Dict[str, Any]]:
+        calendar_url: str | None = None,
+    ) -> dict[str, Any] | None:
         """
         Erstellt einen Kalendereintrag.
 

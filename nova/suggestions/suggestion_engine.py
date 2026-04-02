@@ -16,12 +16,11 @@ weitergegeben werden.
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
 # Fallback-Date-Ideen nach Kategorie (wenn keine Interessen bekannt)
-_GENERIC_DATE_IDEAS: List[str] = [
+_GENERIC_DATE_IDEAS: list[str] = [
     "Gemeinsames Kochen eines neuen Rezepts",
     "Spaziergang in einem Park oder am Wasser",
     "Besuch eines Flohmarkts oder Antiquitätenladens",
@@ -35,7 +34,7 @@ _GENERIC_DATE_IDEAS: List[str] = [
 ]
 
 # Date-Ideen nach Interessengebiet
-_DATE_IDEAS_BY_INTEREST: Dict[str, List[str]] = {
+_DATE_IDEAS_BY_INTEREST: dict[str, list[str]] = {
     "musik": [
         "Livekonzert besuchen",
         "Gemeinsam Musik entdecken und Playlists tauschen",
@@ -111,9 +110,9 @@ class SuggestionEngine:
 
     def date_ideas(
         self,
-        person_id: Optional[int] = None,
+        person_id: int | None = None,
         max_ideas: int = 5,
-    ) -> List[str]:
+    ) -> list[str]:
         """
         Schlägt Date-Ideen vor, basierend auf den Interessen der Person.
 
@@ -125,8 +124,8 @@ class SuggestionEngine:
         Returns:
             Liste von Date-Ideen als Strings.
         """
-        ideas: List[str] = []
-        interests: List[str] = []
+        ideas: list[str] = []
+        interests: list[str] = []
 
         if person_id is not None:
             person = self._rel.get_by_id(person_id)
@@ -150,7 +149,7 @@ class SuggestionEngine:
 
         # Deduplizieren und Limit einhalten
         seen: set = set()
-        result: List[str] = []
+        result: list[str] = []
         for idea in ideas:
             if idea not in seen:
                 seen.add(idea)
@@ -163,7 +162,7 @@ class SuggestionEngine:
 
     def date_ideas_text(
         self,
-        person_id: Optional[int] = None,
+        person_id: int | None = None,
         max_ideas: int = 5,
     ) -> str:
         """
@@ -198,9 +197,9 @@ class SuggestionEngine:
     def meeting_agenda(
         self,
         topic: str = "",
-        participants: Optional[List[str]] = None,
+        participants: list[str] | None = None,
         duration_minutes: int = 60,
-    ) -> List[str]:
+    ) -> list[str]:
         """
         Generiert eine Meeting-Agenda.
 
@@ -212,7 +211,7 @@ class SuggestionEngine:
         Returns:
             Agenda als Liste von Punkten.
         """
-        agenda: List[str] = []
+        agenda: list[str] = []
         if participants:
             agenda.append(f"Teilnehmer: {', '.join(participants)}")
         agenda.append(f"Dauer: {duration_minutes} Minuten")
@@ -231,15 +230,15 @@ class SuggestionEngine:
     def meeting_agenda_text(
         self,
         topic: str = "",
-        participants: Optional[List[str]] = None,
+        participants: list[str] | None = None,
         duration_minutes: int = 60,
     ) -> str:
         """Gibt die Meeting-Agenda als formatierten Text zurück."""
-        title = f"📋 Meeting-Agenda" + (f": {topic}" if topic else "")
-        lines = [title] + self.meeting_agenda(topic, participants, duration_minutes)
+        title = "📋 Meeting-Agenda" + (f": {topic}" if topic else "")
+        lines = [title, *self.meeting_agenda(topic, participants, duration_minutes)]
         return "\n".join(lines)
 
-    def work_task_suggestions(self, max_tasks: int = 5) -> List[str]:
+    def work_task_suggestions(self, max_tasks: int = 5) -> list[str]:
         """
         Schlägt offene Arbeitsaufgaben basierend auf dem GoalManager vor.
 
@@ -249,7 +248,7 @@ class SuggestionEngine:
         Returns:
             Liste von Aufgaben-Strings.
         """
-        tasks: List[str] = []
+        tasks: list[str] = []
         try:
             open_goals = self._goals.get_active_goals()
             for goal in open_goals[:max_tasks]:
@@ -283,7 +282,7 @@ class SuggestionEngine:
     def suggest_for_context(
         self,
         mode_name: str,
-        person_id: Optional[int] = None,
+        person_id: int | None = None,
         topic: str = "",
     ) -> str:
         """

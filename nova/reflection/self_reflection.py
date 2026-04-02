@@ -11,7 +11,7 @@ from __future__ import annotations
 import logging
 import time
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -23,10 +23,10 @@ class ReflectionResult:
     """Ergebnis einer Selbstreflexion."""
     emotional_state: str
     mood_modifier: str
-    top_goal: Optional[str]
+    top_goal: str | None
     personality_summary: str
-    recent_learnings: List[str] = field(default_factory=list)
-    insights: List[str] = field(default_factory=list)
+    recent_learnings: list[str] = field(default_factory=list)
+    insights: list[str] = field(default_factory=list)
     timestamp: float = field(default_factory=time.monotonic)
 
 
@@ -46,7 +46,7 @@ class SelfReflection:
         self._emotion = emotion
         self._goals = goals
         self._ltm = ltm
-        self._last_reflection: Optional[ReflectionResult] = None
+        self._last_reflection: ReflectionResult | None = None
         self._last_reflection_time: float = 0.0
 
     # ------------------------------------------------------------------
@@ -97,8 +97,8 @@ class SelfReflection:
     # ------------------------------------------------------------------
 
     def _generate_insights(
-        self, emotion, style: Dict[str, str], top_goal
-    ) -> List[str]:
+        self, emotion, style: dict[str, str], top_goal
+    ) -> list[str]:
         insights = []
 
         # Emotionaler Einblick
@@ -149,7 +149,7 @@ class SelfReflection:
             parts.append("Einblick: " + r.insights[0])
         return " ".join(parts)
 
-    def quick_status(self) -> Dict[str, Any]:
+    def quick_status(self) -> dict[str, Any]:
         """Gibt einen kompakten Status-Dict zurück."""
         r = self.reflect()
         return {
@@ -163,7 +163,7 @@ class SelfReflection:
     # Meeting-Zusammenfassung
     # ------------------------------------------------------------------
 
-    def summarize_meeting(self, stm_entries: Optional[List] = None) -> str:
+    def summarize_meeting(self, stm_entries: list | None = None) -> str:
         """
         Erstellt eine Zusammenfassung des letzten Meetings aus STM-Einträgen.
 

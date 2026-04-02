@@ -1,9 +1,6 @@
 """Shared test fixtures for Nova test suite."""
 from __future__ import annotations
 
-import os
-import tempfile
-
 import pytest
 
 

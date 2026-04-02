@@ -8,9 +8,9 @@ mit graceful Fallback auf reine Textein-/ausgabe.
 
 from __future__ import annotations
 
+import contextlib
 import logging
 import threading
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -40,13 +40,13 @@ class VoiceIO:
          (Fallback: Texteingabe über Konsole)
     """
 
-    def __init__(self, config: Optional[dict] = None) -> None:
+    def __init__(self, config: dict | None = None) -> None:
         cfg = config or {}
         self._enabled = cfg.get("enabled", True)
         self._language = cfg.get("language", "de-DE")
         self._tts_rate = cfg.get("tts_rate", 175)
         self._tts_volume = cfg.get("tts_volume", 0.9)
-        self._tts_voice_id: Optional[str] = cfg.get("voice_id")
+        self._tts_voice_id: str | None = cfg.get("voice_id")
 
         self._tts_engine = None
         self._tts_lock = threading.Lock()
@@ -123,7 +123,7 @@ class VoiceIO:
     # Hören (STT)
     # ------------------------------------------------------------------
 
-    def listen(self, timeout: float = 5.0) -> Optional[str]:
+    def listen(self, timeout: float = 5.0) -> str | None:
         """
         Hört auf Spracheingabe und gibt erkannten Text zurück.
 
@@ -200,10 +200,8 @@ class VoiceIO:
         """Stoppt die TTS-Engine."""
         self._running = False
         if self._tts_engine:
-            try:
+            with contextlib.suppress(Exception):
                 self._tts_engine.stop()
-            except Exception:
-                pass
 
     @property
     def tts_available(self) -> bool:

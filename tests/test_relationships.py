@@ -1,8 +1,6 @@
 """Tests for nova.relationships.relationship – RelationshipModel & Person."""
 from __future__ import annotations
 
-import pytest
-
 
 class TestAddAndFind:
     """Person creation and lookup."""

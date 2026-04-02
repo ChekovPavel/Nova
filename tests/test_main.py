@@ -2,10 +2,6 @@
 from __future__ import annotations
 
 import json
-import os
-import tempfile
-
-import pytest
 
 from main import load_config, setup_logging
 

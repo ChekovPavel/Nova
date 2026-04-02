@@ -8,8 +8,6 @@ alle Subsysteme für jede Nutzerinteraktion.
 from __future__ import annotations
 
 import logging
-import time
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -109,7 +107,7 @@ class MainLoop:
         current_mode = n.mode_manager.name
 
         # 3a. Meeting verlassen → Zusammenfassung erstellen
-        meeting_summary: Optional[str] = None
+        meeting_summary: str | None = None
         if prev_mode == "meeting" and current_mode != "meeting":
             meeting_entries = n.stm.get_recent(_MAX_MEETING_ENTRIES_FOR_SUMMARY, entry_type="message")
             meeting_summary = n.reflection.summarize_meeting(meeting_entries)
@@ -171,7 +169,7 @@ class MainLoop:
                     content=nlp_result.slots["memory_content"],
                     importance=0.8,
                     category="fact",
-                    tags=nlp_result.keywords[:3] + [profile_tag],
+                    tags=[*nlp_result.keywords[:3], profile_tag],
                 )
 
         # 8. Antwort generieren
@@ -238,7 +236,7 @@ class MainLoop:
     # Eingabe
     # ------------------------------------------------------------------
 
-    def _get_input(self) -> Optional[str]:
+    def _get_input(self) -> str | None:
         """Liest Nutzereingabe (Text oder Voice)."""
         n = self._nova
         # Versuche Voice-Eingabe

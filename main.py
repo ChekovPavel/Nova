@@ -20,7 +20,6 @@ import argparse
 import json
 import logging
 import os
-import sys
 
 
 def setup_logging(level: str = "INFO") -> None:

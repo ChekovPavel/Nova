@@ -14,7 +14,7 @@ Profile:
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from nova.memory.stm import ShortTermMemory
 
@@ -33,8 +33,8 @@ class ContextProfile:
     def __init__(self, name: str, stm_capacity: int = 20) -> None:
         self.name: str = name
         self.stm: ShortTermMemory = ShortTermMemory(capacity=stm_capacity)
-        self.topics: List[str] = []
-        self.session_data: Dict[str, Any] = {}
+        self.topics: list[str] = []
+        self.session_data: dict[str, Any] = {}
 
     def ltm_tag(self) -> str:
         """LTM-Tag, der Erinnerungen diesem Profil zuordnet."""
@@ -65,7 +65,7 @@ class ProfileManager:
     """
 
     def __init__(self, stm_capacity: int = 20) -> None:
-        self._profiles: Dict[str, ContextProfile] = {
+        self._profiles: dict[str, ContextProfile] = {
             ContextProfile.PRIVATE: ContextProfile(
                 ContextProfile.PRIVATE, stm_capacity
             ),
@@ -101,7 +101,7 @@ class ProfileManager:
     # Profilwechsel
     # ------------------------------------------------------------------
 
-    def switch_for_mode(self, mode_name: str) -> Optional[str]:
+    def switch_for_mode(self, mode_name: str) -> str | None:
         """
         Wechselt das aktive Profil basierend auf dem Modus.
 
@@ -123,7 +123,7 @@ class ProfileManager:
             return target
         return None
 
-    def get_profile(self, name: str) -> Optional[ContextProfile]:
+    def get_profile(self, name: str) -> ContextProfile | None:
         """Gibt ein Profil nach Name zurück."""
         return self._profiles.get(name)
 

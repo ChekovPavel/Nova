@@ -1,8 +1,6 @@
 """Tests for nova.security.encryption – SecurityManager."""
 from __future__ import annotations
 
-import pytest
-
 
 class TestEncryptDecrypt:
     """Symmetric encrypt/decrypt round-trip."""

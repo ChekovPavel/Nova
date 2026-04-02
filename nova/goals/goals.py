@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -26,16 +26,16 @@ class Goal:
     STATUS_DONE = "done"
     STATUS_CANCELLED = "cancelled"
 
-    def __init__(self, row: Dict[str, Any]) -> None:
+    def __init__(self, row: dict[str, Any]) -> None:
         self.id: int = row.get("id", 0)
         self.title: str = row["title"]
         self.description: str = row.get("description", "")
         self.priority: float = row.get("priority", 0.5)
         self.status: str = row.get("status", self.STATUS_OPEN)
         self.created_at: str = row.get("created_at", _now_iso())
-        self.updated_at: Optional[str] = row.get("updated_at")
+        self.updated_at: str | None = row.get("updated_at")
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "id": self.id,
             "title": self.title,
@@ -121,7 +121,7 @@ class GoalManager:
     # Ziele abrufen
     # ------------------------------------------------------------------
 
-    def get_active_goals(self) -> List[Goal]:
+    def get_active_goals(self) -> list[Goal]:
         """Gibt alle offenen oder in Bearbeitung befindlichen Ziele zurück."""
         rows = self._db.fetchall(
             "SELECT * FROM goals WHERE status IN ('open','in_progress') "
@@ -129,15 +129,15 @@ class GoalManager:
         )
         return [Goal(dict(r)) for r in rows]
 
-    def get_all_goals(self) -> List[Goal]:
+    def get_all_goals(self) -> list[Goal]:
         rows = self._db.fetchall("SELECT * FROM goals ORDER BY priority DESC")
         return [Goal(dict(r)) for r in rows]
 
-    def get_by_id(self, goal_id: int) -> Optional[Goal]:
+    def get_by_id(self, goal_id: int) -> Goal | None:
         row = self._db.fetchone("SELECT * FROM goals WHERE id=?", (goal_id,))
         return Goal(dict(row)) if row else None
 
-    def get_top_priority(self) -> Optional[Goal]:
+    def get_top_priority(self) -> Goal | None:
         """Gibt das aktuell wichtigste aktive Ziel zurück."""
         goals = self.get_active_goals()
         return goals[0] if goals else None

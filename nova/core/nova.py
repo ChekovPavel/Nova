@@ -9,7 +9,7 @@ die zentrale Nova-Klasse, die alle Subsysteme zusammenhält.
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 # Konfigurationsvalidierung
 # ------------------------------------------------------------------
 
-_CONFIG_SCHEMA: Dict[str, Dict[str, Any]] = {
+_CONFIG_SCHEMA: dict[str, dict[str, Any]] = {
     "db_path": {"type": str, "default": "nova_data.db"},
     "secret_key": {"type": str, "default": None},
     "stm_capacity": {"type": int, "default": 20, "min": 1, "max": 500},
@@ -149,7 +149,7 @@ class Nova:
     # Konstruktion
     # ------------------------------------------------------------------
 
-    def __init__(self, config: Optional[dict] = None) -> None:
+    def __init__(self, config: dict | None = None) -> None:
         self.config: dict = config or {}
         self._initialized: bool = False
 
@@ -189,36 +189,36 @@ class Nova:
     # ------------------------------------------------------------------
 
     @classmethod
-    def create(cls, config: Optional[dict] = None) -> "Nova":
+    def create(cls, config: dict | None = None) -> Nova:
         """Erzeugt und initialisiert eine vollständige Nova-Instanz."""
-        from nova.database.db_manager import DatabaseManager
-        from nova.security.encryption import SecurityManager
-        from nova.memory.ltm import LongTermMemory
-        from nova.memory.stm import ShortTermMemory
-        from nova.memory.storage_depth import StorageDepth
-        from nova.memory.relevance_filter import RelevanceFilter
-        from nova.personality.personality import Personality
-        from nova.personality.emotion import EmotionEngine
-        from nova.relationships.relationship import RelationshipModel
-        from nova.context.context_manager import ContextManager
-        from nova.nlp.processor import NLPProcessor
-        from nova.nlp.response import ResponseGenerator
-        from nova.learning.learner import Learner
-        from nova.goals.goals import GoalManager
-        from nova.reflection.self_reflection import SelfReflection
-        from nova.modes.mode_manager import ModeManager
-        from nova.voice.voice_io import VoiceIO
-        from nova.voice.local_stt import LocalSTT
-        from nova.persons.person_recognition import PersonRecognition
-        from nova.persons.profile_enricher import ProfileEnricher
-        from nova.safety.social_safety import SocialSafetyLayer
         from nova.api.external_services import ExternalServices
         from nova.api.ollama_client import OllamaClient
         from nova.api.web_search import WebSearch
         from nova.backup.backup_manager import BackupManager
+        from nova.context.context_manager import ContextManager
         from nova.core.main_loop import MainLoop
+        from nova.database.db_manager import DatabaseManager
+        from nova.goals.goals import GoalManager
+        from nova.learning.learner import Learner
+        from nova.memory.ltm import LongTermMemory
+        from nova.memory.relevance_filter import RelevanceFilter
+        from nova.memory.stm import ShortTermMemory
+        from nova.memory.storage_depth import StorageDepth
+        from nova.modes.mode_manager import ModeManager
+        from nova.nlp.processor import NLPProcessor
+        from nova.nlp.response import ResponseGenerator
+        from nova.personality.emotion import EmotionEngine
+        from nova.personality.personality import Personality
+        from nova.persons.person_recognition import PersonRecognition
+        from nova.persons.profile_enricher import ProfileEnricher
         from nova.profiles.profile_manager import ProfileManager
+        from nova.reflection.self_reflection import SelfReflection
+        from nova.relationships.relationship import RelationshipModel
+        from nova.safety.social_safety import SocialSafetyLayer
+        from nova.security.encryption import SecurityManager
         from nova.suggestions.suggestion_engine import SuggestionEngine
+        from nova.voice.local_stt import LocalSTT
+        from nova.voice.voice_io import VoiceIO
 
         nova = cls(config)
         cfg = validate_config(nova.config)

@@ -1,8 +1,6 @@
 """Tests for nova.safety.social_safety – SocialSafetyLayer."""
 from __future__ import annotations
 
-import pytest
-
 
 class TestCheckInput:
     """Input safety validation."""

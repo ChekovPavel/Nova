@@ -10,7 +10,6 @@ from __future__ import annotations
 import logging
 import queue
 import threading
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +35,7 @@ class NovaGUI:
 
     def __init__(self, nova) -> None:
         self._nova = nova
-        self._root: Optional[tk.Tk] = None
+        self._root: tk.Tk | None = None
         self._message_queue: queue.Queue = queue.Queue()
 
     # ------------------------------------------------------------------

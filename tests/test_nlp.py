@@ -1,8 +1,6 @@
 """Tests for nova.nlp.processor – NLPProcessor."""
 from __future__ import annotations
 
-import pytest
-
 
 class TestNLPProcess:
     """Core NLP processing pipeline."""

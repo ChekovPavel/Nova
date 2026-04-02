@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +18,7 @@ _MAX_INPUT_LENGTH = 10_000
 
 
 # Kritische Muster für Eingaben
-_BLOCKED_INPUT_PATTERNS: List[Tuple[str, str]] = [
+_BLOCKED_INPUT_PATTERNS: list[tuple[str, str]] = [
     # (Muster, Grund)
     (r"\b(bomb|waffe|sprengstoff|exploit|hack)\b.*\b(bau|mach|erkläre?|wie)\b",
      "gefährliche Anleitung"),
@@ -34,13 +33,13 @@ _BLOCKED_INPUT_PATTERNS: List[Tuple[str, str]] = [
 ]
 
 # Kritische Muster für Ausgaben
-_BLOCKED_OUTPUT_PATTERNS: List[Tuple[str, str]] = [
+_BLOCKED_OUTPUT_PATTERNS: list[tuple[str, str]] = [
     (r"\b(hier ist eine Anleitung|step.by.step guide)\b.*\b(waffe|bombe)\b",
      "schädliche Ausgabe"),
 ]
 
 # Empfindliche Themen – werden nicht blockiert, aber vorsichtig behandelt
-_SENSITIVE_TOPICS: List[str] = [
+_SENSITIVE_TOPICS: list[str] = [
     "suizid", "selbstverletzung", "depression", "missbrauch", "trauma",
     "suicide", "self-harm", "abuse",
 ]

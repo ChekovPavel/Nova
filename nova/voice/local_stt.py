@@ -17,14 +17,11 @@ Dieses Modul ersetzt / ergänzt die Google-STT in voice_io.py.
 
 from __future__ import annotations
 
+import contextlib
 import logging
 import os
-import queue
-import struct
 import tempfile
-import threading
 import wave
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -74,13 +71,13 @@ class LocalSTT:
         whisper_model: str = "tiny",
         whisper_device: str = "cpu",
         whisper_compute_type: str = "int8",
-        vosk_model_path: Optional[str] = None,
+        vosk_model_path: str | None = None,
         language: str = "de",
     ) -> None:
         self.language = language
-        self._whisper: Optional[object] = None
-        self._vosk_model: Optional[object] = None
-        self._backend: Optional[str] = None
+        self._whisper: object | None = None
+        self._vosk_model: object | None = None
+        self._backend: str | None = None
 
         if _WHISPER_AVAILABLE:
             self._init_whisper(whisper_model, whisper_device, whisper_compute_type)
@@ -125,7 +122,7 @@ class LocalSTT:
     # Haupt-Erkennungsmethode
     # ------------------------------------------------------------------
 
-    def recognize_from_mic(self, duration: float = 5.0) -> Optional[str]:
+    def recognize_from_mic(self, duration: float = 5.0) -> str | None:
         """
         Nimmt ``duration`` Sekunden vom Mikrofon auf und gibt den Text zurück.
 
@@ -146,7 +143,7 @@ class LocalSTT:
 
         return self.recognize_from_bytes(audio_data)
 
-    def recognize_from_bytes(self, audio_bytes: bytes) -> Optional[str]:
+    def recognize_from_bytes(self, audio_bytes: bytes) -> str | None:
         """
         Erkennt Sprache aus 16-bit 16kHz mono PCM-Bytes.
 
@@ -162,7 +159,7 @@ class LocalSTT:
             return self._recognize_vosk(audio_bytes)
         return None
 
-    def recognize_from_file(self, wav_path: str) -> Optional[str]:
+    def recognize_from_file(self, wav_path: str) -> str | None:
         """Erkennt Sprache aus einer WAV-Datei."""
         if self._backend == "whisper":
             try:
@@ -181,9 +178,9 @@ class LocalSTT:
     # Whisper-Erkennung
     # ------------------------------------------------------------------
 
-    def _recognize_whisper(self, audio_bytes: bytes) -> Optional[str]:
+    def _recognize_whisper(self, audio_bytes: bytes) -> str | None:
         """Schreibt Bytes in temporäre WAV-Datei und ruft Whisper auf."""
-        tmp_path: Optional[str] = None
+        tmp_path: str | None = None
         try:
             with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as f:
                 tmp_path = f.name
@@ -206,16 +203,14 @@ class LocalSTT:
             return None
         finally:
             if tmp_path and os.path.exists(tmp_path):
-                try:
+                with contextlib.suppress(OSError):
                     os.unlink(tmp_path)
-                except OSError:
-                    pass
 
     # ------------------------------------------------------------------
     # Vosk-Erkennung
     # ------------------------------------------------------------------
 
-    def _recognize_vosk(self, audio_bytes: bytes) -> Optional[str]:
+    def _recognize_vosk(self, audio_bytes: bytes) -> str | None:
         import json as _json
         try:
             rec = vosk.KaldiRecognizer(self._vosk_model, _RATE)
@@ -231,7 +226,7 @@ class LocalSTT:
     # Audioaufnahme
     # ------------------------------------------------------------------
 
-    def _record_audio(self, duration: float) -> Optional[bytes]:
+    def _record_audio(self, duration: float) -> bytes | None:
         """Nimmt Audio vom Mikrofon auf und gibt PCM-Bytes zurück."""
         if not _PYAUDIO_AVAILABLE:
             return None

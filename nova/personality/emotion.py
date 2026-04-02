@@ -11,13 +11,12 @@ from __future__ import annotations
 import logging
 import time
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
 # Emotions-Bibliothek: Name → (valence, arousal, dominance)
 # Skala je -1.0 bis +1.0
-EMOTION_VECTORS: Dict[str, Tuple[float, float, float]] = {
+EMOTION_VECTORS: dict[str, tuple[float, float, float]] = {
     "joy":        ( 0.80,  0.50,  0.40),
     "excitement": ( 0.70,  0.80,  0.50),
     "calm":       ( 0.40,  -0.30,  0.20),
@@ -44,7 +43,7 @@ class EmotionState:
     dominance: float = 0.0  # -1 (unterwürfig) bis +1 (dominant)
     label: str = "neutral"
     intensity: float = 0.0  # 0.0–1.0
-    history: List[str] = field(default_factory=list)
+    history: list[str] = field(default_factory=list)
     last_update: float = field(default_factory=time.monotonic)
 
 
@@ -115,7 +114,7 @@ class EmotionEngine:
     # Text-basierter Emotionserkenner (einfaches Keyword-Mapping)
     # ------------------------------------------------------------------
 
-    _KEYWORD_MAP: Dict[str, str] = {
+    _KEYWORD_MAP: dict[str, str] = {
         "toll|super|klasse|freue|danke|schön|liebe": "joy",
         "traurig|schlimm|schrecklich|weine|verloren": "sadness",
         "wütend|scheiße|hass|furchtbar|Ärger": "anger",
@@ -125,7 +124,7 @@ class EmotionEngine:
         "wow|überraschend|unerwartet": "surprise",
     }
 
-    def detect_from_text(self, text: str) -> Optional[str]:
+    def detect_from_text(self, text: str) -> str | None:
         """Einfache Schlüsselworterkennung für die Emotion im Text."""
         import re
         text_lower = text.lower()

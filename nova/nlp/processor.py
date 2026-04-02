@@ -12,14 +12,14 @@ from __future__ import annotations
 import logging
 import re
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 # ------------------------------------------------------------------
 # Intent-Definitionen
 # ------------------------------------------------------------------
-_INTENTS: Dict[str, List[str]] = {
+_INTENTS: dict[str, list[str]] = {
     "greeting":       [r"\b(hallo|hi|hey|guten morgen|guten abend|servus|moin)\b"],
     "farewell":       [r"\b(tschüss|auf wiedersehen|bye|ciao|bis später|tschau)\b"],
     "thanks":         [r"\b(danke|vielen dank|thx|thank you|merci)\b"],
@@ -42,14 +42,14 @@ class NLPResult:
     """Ergebnis einer NLP-Verarbeitung."""
     raw_text: str
     normalized: str
-    tokens: List[str]
+    tokens: list[str]
     intent: str
     intent_confidence: float
-    slots: Dict[str, Any] = field(default_factory=dict)
+    slots: dict[str, Any] = field(default_factory=dict)
     language: str = "de"
     is_question: bool = False
     sentiment: float = 0.0   # -1.0 (negativ) bis +1.0 (positiv)
-    keywords: List[str] = field(default_factory=list)
+    keywords: list[str] = field(default_factory=list)
 
 
 class NLPProcessor:
@@ -122,7 +122,7 @@ class NLPProcessor:
     # Tokenisierung
     # ------------------------------------------------------------------
 
-    def _tokenize(self, text: str) -> List[str]:
+    def _tokenize(self, text: str) -> list[str]:
         """Einfache Whitespace- + Satzzeichen-Tokenisierung."""
         tokens = re.findall(r"\b\w+\b", text.lower())
         return tokens
@@ -168,8 +168,8 @@ class NLPProcessor:
     # Slot-Extraktion
     # ------------------------------------------------------------------
 
-    def _extract_slots(self, text: str, intent: str) -> Dict[str, Any]:
-        slots: Dict[str, Any] = {}
+    def _extract_slots(self, text: str, intent: str) -> dict[str, Any]:
+        slots: dict[str, Any] = {}
 
         # Namen aus Kontext
         name_match = re.search(
@@ -227,7 +227,7 @@ class NLPProcessor:
     # Sentiment
     # ------------------------------------------------------------------
 
-    def _estimate_sentiment(self, tokens: List[str]) -> float:
+    def _estimate_sentiment(self, tokens: list[str]) -> float:
         pos = sum(1 for t in tokens if t in self._POSITIVE_WORDS)
         neg = sum(1 for t in tokens if t in self._NEGATIVE_WORDS)
         total = pos + neg
@@ -246,7 +246,7 @@ class NLPProcessor:
         "and", "or", "not", "have", "has",
     }
 
-    def _extract_keywords(self, tokens: List[str]) -> List[str]:
+    def _extract_keywords(self, tokens: list[str]) -> list[str]:
         seen = set()
         keywords = []
         for t in tokens:

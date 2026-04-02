@@ -21,10 +21,8 @@ from __future__ import annotations
 
 import json
 import logging
-import socket
 import urllib.error
 import urllib.request
-from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +48,7 @@ class OllamaClient:
         self,
         host: str = _DEFAULT_HOST,
         model: str = "llama3.2:1b",
-        system_prompt: Optional[str] = None,
+        system_prompt: str | None = None,
         temperature: float = 0.7,
         max_tokens: int = 512,
         context_messages: int = 8,
@@ -69,7 +67,7 @@ class OllamaClient:
         self.temperature = temperature
         self.max_tokens = max_tokens
         self.context_messages = context_messages
-        self._available: Optional[bool] = None  # Cache
+        self._available: bool | None = None  # Cache
 
     # ------------------------------------------------------------------
     # Chat-Completions (Haupt-API)
@@ -78,9 +76,9 @@ class OllamaClient:
     def chat(
         self,
         user_input: str,
-        history: Optional[List[Dict[str, str]]] = None,
+        history: list[dict[str, str]] | None = None,
         extra_system: str = "",
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Sendet eine Chat-Nachricht an Ollama und gibt die Antwort zurück.
 
@@ -125,7 +123,7 @@ class OllamaClient:
     # Einfache Generierung (kein History-Management nötig)
     # ------------------------------------------------------------------
 
-    def generate(self, prompt: str) -> Optional[str]:
+    def generate(self, prompt: str) -> str | None:
         """Einfache Prompt-Vervollständigung ohne Chat-History."""
         payload = {
             "model": self.model,
@@ -148,7 +146,7 @@ class OllamaClient:
     # Modell-Verwaltung
     # ------------------------------------------------------------------
 
-    def list_models(self) -> List[str]:
+    def list_models(self) -> list[str]:
         """Gibt alle lokal verfügbaren Modelle zurück."""
         try:
             resp = self._get(f"{self.host}/api/tags")
@@ -158,7 +156,7 @@ class OllamaClient:
             logger.warning("Ollama model list fehlgeschlagen: %s", exc)
         return []
 
-    def model_available(self, model_name: Optional[str] = None) -> bool:
+    def model_available(self, model_name: str | None = None) -> bool:
         """Prüft, ob ein bestimmtes (oder das konfigurierte) Modell verfügbar ist."""
         name = model_name or self.model
         available = self.list_models()
@@ -189,7 +187,7 @@ class OllamaClient:
     # HTTP-Helfer
     # ------------------------------------------------------------------
 
-    def _post(self, url: str, data: Dict) -> Optional[Dict]:
+    def _post(self, url: str, data: dict) -> dict | None:
         body = json.dumps(data).encode()
         req = urllib.request.Request(
             url,
@@ -200,7 +198,7 @@ class OllamaClient:
         with urllib.request.urlopen(req, timeout=self._timeout) as resp:
             return json.loads(resp.read().decode())
 
-    def _get(self, url: str) -> Optional[Dict]:
+    def _get(self, url: str) -> dict | None:
         req = urllib.request.Request(url)
         with urllib.request.urlopen(req, timeout=10) as resp:
             return json.loads(resp.read().decode())

@@ -12,7 +12,7 @@ import logging
 import time
 from collections import deque
 from dataclasses import dataclass, field
-from typing import Any, Deque, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +28,7 @@ class STMEntry:
     relevance: float = 0.5               # 0.0 – 1.0
     created_at: float = field(default_factory=time.monotonic)
     ttl: float = _DEFAULT_TTL            # Lebensdauer in Sekunden
-    tags: List[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
 
     @property
     def is_expired(self) -> bool:
@@ -49,7 +49,7 @@ class ShortTermMemory:
 
     def __init__(self, capacity: int = 20) -> None:
         self.capacity = capacity
-        self._buffer: Deque[STMEntry] = deque(maxlen=capacity)
+        self._buffer: deque[STMEntry] = deque(maxlen=capacity)
 
     # ------------------------------------------------------------------
     # Hinzufügen
@@ -61,7 +61,7 @@ class ShortTermMemory:
         entry_type: str = "message",
         relevance: float = 0.5,
         ttl: float = _DEFAULT_TTL,
-        tags: Optional[List[str]] = None,
+        tags: list[str] | None = None,
     ) -> STMEntry:
         """Fügt einen neuen Eintrag ins STM ein."""
         entry = STMEntry(
@@ -92,9 +92,9 @@ class ShortTermMemory:
     def get_recent(
         self,
         n: int = 10,
-        entry_type: Optional[str] = None,
+        entry_type: str | None = None,
         min_relevance: float = 0.0,
-    ) -> List[STMEntry]:
+    ) -> list[STMEntry]:
         """Gibt die neuesten (nicht abgelaufenen) Einträge zurück."""
         self.purge()
         entries = list(self._buffer)
@@ -104,12 +104,12 @@ class ShortTermMemory:
             entries = [e for e in entries if e.relevance >= min_relevance]
         return entries[-n:]
 
-    def get_messages(self, n: int = 10) -> List[Dict[str, str]]:
+    def get_messages(self, n: int = 10) -> list[dict[str, str]]:
         """Gibt die letzten n Nachrichten als Liste von Dicts zurück."""
         entries = self.get_recent(n=n, entry_type="message")
         return [e.content for e in entries if isinstance(e.content, dict)]
 
-    def search(self, keyword: str) -> List[STMEntry]:
+    def search(self, keyword: str) -> list[STMEntry]:
         """Einfache Keyword-Suche im STM."""
         keyword_lower = keyword.lower()
         results = []
@@ -154,10 +154,10 @@ class ShortTermMemory:
     def is_empty(self) -> bool:
         return len(self._buffer) == 0
 
-    def summary(self) -> Dict[str, Any]:
+    def summary(self) -> dict[str, Any]:
         """Kurze Zusammenfassung des STM-Zustands."""
         self.purge()
-        by_type: Dict[str, int] = {}
+        by_type: dict[str, int] = {}
         for e in self._buffer:
             by_type[e.entry_type] = by_type.get(e.entry_type, 0) + 1
         return {"count": len(self._buffer), "by_type": by_type}

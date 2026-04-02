@@ -1,10 +1,6 @@
 """Tests for nova.database.db_manager – DatabaseManager."""
 from __future__ import annotations
 
-import json
-
-import pytest
-
 
 class TestDatabaseManagerInit:
     """Schema creation and connection."""

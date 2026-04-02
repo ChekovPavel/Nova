@@ -15,7 +15,6 @@ from __future__ import annotations
 import logging
 import time
 from dataclasses import dataclass
-from typing import Dict, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +36,7 @@ class Mode:
 # ------------------------------------------------------------------
 # Moduskatalog
 # ------------------------------------------------------------------
-MODES: Dict[str, Mode] = {
+MODES: dict[str, Mode] = {
     "normal": Mode(
         name="normal",
         description="Standardmodus für alltägliche Gespräche.",
@@ -114,7 +113,7 @@ MODES: Dict[str, Mode] = {
     ),
 }
 
-_KEYWORD_TO_MODE: Dict[str, str] = {
+_KEYWORD_TO_MODE: dict[str, str] = {
     "schlaf": "sleep",
     "arbeit": "work",
     "entspann": "relax",
@@ -148,7 +147,7 @@ class ModeManager:
     def __init__(self, emotion) -> None:
         self._emotion = emotion
         self._current: Mode = MODES["normal"]
-        self._previous: Optional[Mode] = None
+        self._previous: Mode | None = None
         self._mode_start: float = time.monotonic()
 
     # ------------------------------------------------------------------
@@ -206,7 +205,7 @@ class ModeManager:
 
         return self._current
 
-    def switch_from_text(self, text: str) -> Optional[Mode]:
+    def switch_from_text(self, text: str) -> Mode | None:
         """Erkennt Moduswechsel-Intention im Text und führt ihn durch."""
         text_lower = text.lower()
         # Längere Keywords zuerst prüfen (Spezifizität)
@@ -215,7 +214,7 @@ class ModeManager:
                 return self.switch(_KEYWORD_TO_MODE[keyword])
         return None
 
-    def restore_previous(self) -> Optional[Mode]:
+    def restore_previous(self) -> Mode | None:
         """Wechselt zurück zum vorherigen Modus."""
         if self._previous:
             return self.switch(self._previous.name)

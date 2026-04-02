@@ -1,8 +1,6 @@
 """Tests for nova.profiles.profile_manager – ProfileManager."""
 from __future__ import annotations
 
-import pytest
-
 
 class TestProfileSwitching:
     """Private ↔ work context separation."""
@@ -11,7 +9,7 @@ class TestProfileSwitching:
         assert profile_manager.active_name == "private"
 
     def test_switch_to_work(self, profile_manager):
-        result = profile_manager.switch_for_mode("work")
+        profile_manager.switch_for_mode("work")
         assert profile_manager.active_name == "work"
 
     def test_switch_to_private_mode(self, profile_manager):

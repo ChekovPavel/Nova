@@ -22,7 +22,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 # Erkennungsmuster
 # Tupel-Format: (feld, pattern, gruppe, normalisierungs-callable_oder_None)
 # ---------------------------------------------------------------------------
-_PATTERNS: List[Tuple[str, str, int, Optional[Any]]] = [
+_PATTERNS: list[tuple[str, str, int, Any | None]] = [
     # --- Interessen / Hobbys ------------------------------------------------
     # "mein Hobby ist X" / "meine Hobbys sind X, Y"
     (
@@ -163,7 +163,7 @@ _PATTERNS: List[Tuple[str, str, int, Optional[Any]]] = [
 # Wörter, die als Hobby/Interesse zu kurz oder zu generisch sind
 _INTEREST_STOPWORDS = {
     "dich", "mich", "das", "die", "der", "es", "ihn", "sie", "wir",
-    "ihn", "uns", "euch", "auch", "sehr", "nicht", "noch", "mal",
+    "uns", "euch", "auch", "sehr", "nicht", "noch", "mal",
     "doch", "gar", "kein", "keine", "halt", "ja", "nein",
 }
 
@@ -173,7 +173,7 @@ _INTEREST_STOPWORDS = {
 _MAX_INTEREST_LEN = 40
 
 
-def _clean_interest(value: str) -> Optional[str]:
+def _clean_interest(value: str) -> str | None:
     """Bereinigt und validiert einen Interessenswert."""
     value = value.strip().rstrip(".,!?")
     # Zu lang → wahrscheinlich ein ganzer Satz
@@ -185,7 +185,7 @@ def _clean_interest(value: str) -> Optional[str]:
     return value
 
 
-def _split_list_value(value: str) -> List[str]:
+def _split_list_value(value: str) -> list[str]:
     """Splittet 'A, B und C' in ['A', 'B', 'C']."""
     # Erst " und " / " & " trennen, dann Komma
     value = re.sub(r"\s+(?:und|&|sowie)\s+", ",", value, flags=re.IGNORECASE)
@@ -212,7 +212,7 @@ class ProfileEnricher:
         self,
         person,
         text: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Analysiert ``text`` auf neue Profilattribute und speichert
         Neuigkeiten in person.profile und im LTM.
@@ -226,7 +226,7 @@ class ProfileEnricher:
             {"interests": ["Tennis"], "nationality": "Deutsch"}.
             Leeres Dict, wenn nichts Neues erkannt wurde.
         """
-        added: Dict[str, Any] = {}
+        added: dict[str, Any] = {}
         text_lower = text  # Patterns nutzen re.IGNORECASE
 
         for field, pattern, group, transform in _PATTERNS:
@@ -281,23 +281,23 @@ class ProfileEnricher:
 
     def _add_to_list_field(
         self, person, field: str, new_item: str
-    ) -> List[str]:
+    ) -> list[str]:
         """
         Fügt new_item zu einem Listenfeld hinzu, falls es noch nicht
         enthalten ist. Gibt Liste der tatsächlich hinzugefügten Elemente zurück.
         """
-        existing: List[str] = person.profile.get(field, [])
+        existing: list[str] = person.profile.get(field, [])
         existing_lower = [e.lower() for e in existing]
         if new_item.lower() in existing_lower:
             return []  # Bereits vorhanden
 
-        updated = list(existing) + [new_item]
+        updated = [*list(existing), new_item]
         person.update_profile(field, updated)
         return [new_item]
 
     def _update_scalar_field(
         self, person, field: str, new_value: Any
-    ) -> Optional[Any]:
+    ) -> Any | None:
         """
         Aktualisiert ein skalares Profilfeld, wenn es noch nicht gesetzt
         oder leer ist. Gibt den neuen Wert zurück (oder None wenn schon da).
@@ -314,7 +314,7 @@ class ProfileEnricher:
         person.update_profile(field, new_value)
         return new_value
 
-    def _store_in_ltm(self, person, added: Dict[str, Any]) -> None:
+    def _store_in_ltm(self, person, added: dict[str, Any]) -> None:
         """Speichert neu erkannte Attribute als Fakten im LTM."""
         for field, value in added.items():
             if isinstance(value, list):

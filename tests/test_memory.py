@@ -1,9 +1,6 @@
 """Tests for nova.memory – ShortTermMemory and LongTermMemory."""
 from __future__ import annotations
 
-import pytest
-
-
 # ── ShortTermMemory ──────────────────────────────────────────────────────────
 
 class TestSTMBasic:

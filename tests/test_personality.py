@@ -1,9 +1,6 @@
 """Tests for nova.personality – Personality and EmotionEngine."""
 from __future__ import annotations
 
-import pytest
-
-
 # ── Personality ──────────────────────────────────────────────────────────────
 
 class TestPersonalityTraits:

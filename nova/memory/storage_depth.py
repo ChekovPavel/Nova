@@ -9,7 +9,7 @@ explizitem Konsolidierungsbedarf.
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -43,10 +43,10 @@ class StorageDepth:
         importance: float = 0.5,
         category: str = "general",
         entry_type: str = "message",
-        tags: Optional[List[str]] = None,
+        tags: list[str] | None = None,
         emotional: bool = False,
         encrypt: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Speichert ``content`` in den passenden Speicher(n).
 
@@ -56,7 +56,7 @@ class StorageDepth:
         if emotional:
             importance = min(1.0, importance + _EMOTIONAL_BOOST)
 
-        result: Dict[str, Any] = {"stm": None, "ltm_id": None}
+        result: dict[str, Any] = {"stm": None, "ltm_id": None}
 
         if importance < _STM_ONLY_THRESHOLD:
             logger.debug("StorageDepth: Inhalt unter Schwelle – verworfen.")
@@ -133,7 +133,7 @@ class StorageDepth:
     # Statistik
     # ------------------------------------------------------------------
 
-    def status(self) -> Dict[str, Any]:
+    def status(self) -> dict[str, Any]:
         return {
             "stm": self._stm.summary(),
             "ltm": self._ltm.stats(),

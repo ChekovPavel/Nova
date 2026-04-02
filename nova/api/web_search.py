@@ -22,7 +22,7 @@ import logging
 import urllib.error
 import urllib.parse
 import urllib.request
-from typing import Any, Dict, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +48,7 @@ class WebSearch:
     # Personensuche
     # ------------------------------------------------------------------
 
-    def search_person(self, name: str) -> Dict[str, Any]:
+    def search_person(self, name: str) -> dict[str, Any]:
         """
         Sucht Informationen über eine (öffentlich bekannte) Person online.
 
@@ -59,7 +59,7 @@ class WebSearch:
             Dict mit Feldern: name, description, abstract, url, source.
             Nicht gefundene Felder sind None.
         """
-        result: Dict[str, Any] = {
+        result: dict[str, Any] = {
             "name": name,
             "description": None,
             "abstract": None,
@@ -102,7 +102,7 @@ class WebSearch:
     # Themensuche
     # ------------------------------------------------------------------
 
-    def search_topic(self, query: str) -> Optional[str]:
+    def search_topic(self, query: str) -> str | None:
         """
         Allgemeine Themensuche via DuckDuckGo Instant Answers.
 
@@ -136,7 +136,7 @@ class WebSearch:
 
     def _search_wikipedia(
         self, query: str, lang: str = "de"
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """Ruft die Wikipedia-Zusammenfassung für einen Begriff ab."""
         base = _WIKI_SUMMARY_DE if lang == "de" else _WIKI_SUMMARY_EN
         encoded = urllib.parse.quote(query.replace(" ", "_"))
@@ -177,7 +177,7 @@ class WebSearch:
             )
         return None
 
-    def _search_duckduckgo(self, query: str) -> Optional[Dict[str, Any]]:
+    def _search_duckduckgo(self, query: str) -> dict[str, Any] | None:
         """Nutzt die DuckDuckGo Instant Answers JSON-API."""
         params = urllib.parse.urlencode(
             {
@@ -213,7 +213,7 @@ class WebSearch:
     # Hilfsmethode: Ergebnis für Nova-Antwort formatieren
     # ------------------------------------------------------------------
 
-    def format_result(self, result: Dict[str, Any]) -> str:
+    def format_result(self, result: dict[str, Any]) -> str:
         """
         Formatiert ein Suchergebnis als lesbaren Text für Novas Antwort.
 

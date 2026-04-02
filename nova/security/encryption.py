@@ -11,9 +11,7 @@ import base64
 import hashlib
 import hmac
 import logging
-import os
 import secrets
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +34,7 @@ class SecurityManager:
 
     PBKDF2_ITERATIONS = 390_000
 
-    def __init__(self, secret_key: Optional[str] = None) -> None:
+    def __init__(self, secret_key: str | None = None) -> None:
         self._key_material: bytes = self._derive_key(secret_key)
         if _FERNET_AVAILABLE:
             fernet_key = base64.urlsafe_b64encode(self._key_material)
@@ -48,7 +46,7 @@ class SecurityManager:
     # Schlüsselableitung
     # ------------------------------------------------------------------
 
-    def _derive_key(self, secret: Optional[str]) -> bytes:
+    def _derive_key(self, secret: str | None) -> bytes:
         """Leitet einen 32-Byte-Schlüssel aus dem Geheimnis ab."""
         if secret is None:
             # Zufälliger Sitzungsschlüssel (nicht persistent)

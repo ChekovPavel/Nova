@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import logging
 import random
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +58,7 @@ class ResponseGenerator:
     def generate(
         self,
         nlp_result,
-        extra_context: Optional[Dict[str, Any]] = None,
+        extra_context: dict[str, Any] | None = None,
     ) -> str:
         """
         Erzeugt eine Antwort auf ein NLPResult.
@@ -121,8 +121,8 @@ class ResponseGenerator:
     # ------------------------------------------------------------------
 
     def _build_ollama_history(
-        self, context_snapshot: Dict[str, Any]
-    ) -> List[Dict[str, str]]:
+        self, context_snapshot: dict[str, Any]
+    ) -> list[dict[str, str]]:
         """Konvertiert STM-Nachrichten in Ollama-History-Format."""
         history = []
         for msg in context_snapshot.get("messages", [])[-8:]:
@@ -132,8 +132,8 @@ class ResponseGenerator:
 
     def _build_extra_system(
         self,
-        context_snapshot: Dict[str, Any],
-        extra_context: Optional[Dict],
+        context_snapshot: dict[str, Any],
+        extra_context: dict | None,
     ) -> str:
         """Baut zusätzliche Systeminformation für Ollama zusammen."""
         parts = []
@@ -176,7 +176,7 @@ class ResponseGenerator:
     ]
 
     def _rule_based_response(
-        self, nlp_result, extra_context: Dict
+        self, nlp_result, extra_context: dict
     ) -> str:
         intent = nlp_result.intent
         slots = nlp_result.slots

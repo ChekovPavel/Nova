@@ -1,10 +1,7 @@
 """Tests for API retry logic in nova.api.external_services."""
 from __future__ import annotations
 
-import time
 from unittest.mock import MagicMock, patch
-
-import pytest
 
 
 class TestRetryLogic:

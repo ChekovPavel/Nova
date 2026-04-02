@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +47,7 @@ class RelevanceFilter:
         self,
         text: str,
         base_score: float = 0.5,
-        boost_tags: Optional[List[str]] = None,
+        boost_tags: list[str] | None = None,
     ) -> float:
         """
         Berechnet einen Relevanz-Score (0.0–1.0) für einen Text.
@@ -98,7 +98,7 @@ class RelevanceFilter:
         include_ltm: bool = True,
         ltm_query: str = "",
         ltm_limit: int = 3,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Baut das Kontextfenster für die Antwortgenerierung auf.
 
@@ -107,7 +107,7 @@ class RelevanceFilter:
         Returns:
             Geordnete Liste von Kontext-Dicts.
         """
-        context: List[Dict[str, Any]] = []
+        context: list[dict[str, Any]] = []
 
         # STM-Nachrichten
         recent = self._stm.get_recent(
@@ -153,7 +153,7 @@ class RelevanceFilter:
         Returns:
             Anzahl entfernter Einträge.
         """
-        before = len(self._stm)
+        len(self._stm)
         purged = self._stm.purge()
         entries = self._stm.get_recent(n=999)
         removed = 0
@@ -170,7 +170,7 @@ class RelevanceFilter:
     # ------------------------------------------------------------------
 
     def summarize_context(
-        self, context: List[Dict[str, Any]], max_chars: int = 500
+        self, context: list[dict[str, Any]], max_chars: int = 500
     ) -> str:
         """Erstellt eine kurze Textzusammenfassung des Kontexts."""
         parts = []

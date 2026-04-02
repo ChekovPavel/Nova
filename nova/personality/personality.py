@@ -10,12 +10,11 @@ Lernerfahrungen anpassen.
 from __future__ import annotations
 
 import logging
-from typing import Dict, Optional
 
 logger = logging.getLogger(__name__)
 
 # Standard-Trait-Werte für eine freundliche, neugierige KI
-_DEFAULT_TRAITS: Dict[str, float] = {
+_DEFAULT_TRAITS: dict[str, float] = {
     # Big Five (OCEAN), Skala 0.0–1.0
     "openness": 0.85,          # Offenheit für Neues
     "conscientiousness": 0.75, # Gewissenhaftigkeit
@@ -46,7 +45,7 @@ class Personality:
 
     def __init__(self, db) -> None:
         self._db = db
-        self._traits: Dict[str, float] = {}
+        self._traits: dict[str, float] = {}
         self._load_or_init()
 
     # ------------------------------------------------------------------
@@ -85,7 +84,7 @@ class Personality:
             commit=True,
         )
 
-    def all_traits(self) -> Dict[str, float]:
+    def all_traits(self) -> dict[str, float]:
         """Gibt eine Kopie aller Traits zurück."""
         return dict(self._traits)
 
@@ -114,7 +113,7 @@ class Personality:
     # Stil-Ausgabe
     # ------------------------------------------------------------------
 
-    def communication_style(self) -> Dict[str, str]:
+    def communication_style(self) -> dict[str, str]:
         """
         Leitet aus den Traits einen Kommunikationsstil ab.
 
@@ -137,7 +136,7 @@ class Personality:
             "humor_level": humor_level,
         }
 
-    def style_for_mode(self, mode_name: str) -> Dict[str, str]:
+    def style_for_mode(self, mode_name: str) -> dict[str, str]:
         """
         Gibt modusspezifische Kommunikationsstil-Overrides zurück.
 

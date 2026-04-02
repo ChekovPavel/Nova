@@ -1,8 +1,6 @@
 """Tests for nova.modes.mode_manager – ModeManager."""
 from __future__ import annotations
 
-import pytest
-
 
 class TestModeSwitch:
     """Mode switching and properties."""
@@ -11,7 +9,7 @@ class TestModeSwitch:
         assert mode_manager.name == "normal"
 
     def test_switch_to_valid_mode(self, mode_manager):
-        mode = mode_manager.switch("work")
+        mode_manager.switch("work")
         assert mode_manager.name == "work"
 
     def test_switch_to_invalid_mode_ignored(self, mode_manager):

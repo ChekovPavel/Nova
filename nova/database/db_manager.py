@@ -13,8 +13,9 @@ import logging
 import os
 import sqlite3
 import threading
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Any, Dict, Iterator, List, Optional, Tuple
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +33,7 @@ class DatabaseManager:
         if db_dir:
             os.makedirs(db_dir, exist_ok=True)
         self._lock = threading.Lock()
-        self._conn: Optional[sqlite3.Connection] = None
+        self._conn: sqlite3.Connection | None = None
         self._connect()
         self._apply_schema()
 
@@ -148,7 +149,7 @@ class DatabaseManager:
     def execute(
         self,
         sql: str,
-        params: Tuple = (),
+        params: tuple = (),
         commit: bool = False,
     ) -> sqlite3.Cursor:
         with self._lock:
@@ -157,17 +158,17 @@ class DatabaseManager:
                 self._conn.commit()
             return cur
 
-    def fetchall(self, sql: str, params: Tuple = ()) -> List[sqlite3.Row]:
+    def fetchall(self, sql: str, params: tuple = ()) -> list[sqlite3.Row]:
         with self._lock:
             return self._conn.execute(sql, params).fetchall()
 
     def fetchone(
-        self, sql: str, params: Tuple = ()
-    ) -> Optional[sqlite3.Row]:
+        self, sql: str, params: tuple = ()
+    ) -> sqlite3.Row | None:
         with self._lock:
             return self._conn.execute(sql, params).fetchone()
 
-    def insert(self, table: str, data: Dict[str, Any]) -> int:
+    def insert(self, table: str, data: dict[str, Any]) -> int:
         cols = ", ".join(data.keys())
         placeholders = ", ".join("?" * len(data))
         sql = f"INSERT INTO {table} ({cols}) VALUES ({placeholders})"
@@ -179,11 +180,11 @@ class DatabaseManager:
     def update(
         self,
         table: str,
-        data: Dict[str, Any],
+        data: dict[str, Any],
         where: str,
-        where_params: Tuple = (),
+        where_params: tuple = (),
     ) -> int:
-        sets = ", ".join(f"{k}=?" for k in data.keys())
+        sets = ", ".join(f"{k}=?" for k in data)
         sql = f"UPDATE {table} SET {sets} WHERE {where}"
         with self._lock:
             cur = self._conn.execute(

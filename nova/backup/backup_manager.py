@@ -26,7 +26,6 @@ import threading
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -62,10 +61,10 @@ class BackupManager:
         self.interval_sec = interval_sec
         self.enabled = enabled
 
-        self._thread: Optional[threading.Thread] = None
+        self._thread: threading.Thread | None = None
         self._stop_event = threading.Event()
-        self._last_backup: Optional[float] = None
-        self._last_daily: Optional[float] = None
+        self._last_backup: float | None = None
+        self._last_daily: float | None = None
 
         if enabled:
             os.makedirs(self.backup_dir, exist_ok=True)
@@ -119,7 +118,7 @@ class BackupManager:
     # Backup erstellen
     # ------------------------------------------------------------------
 
-    def backup_now(self, label: str = "") -> Optional[str]:
+    def backup_now(self, label: str = "") -> str | None:
         """
         Erstellt sofort ein Backup.
 
@@ -133,7 +132,7 @@ class BackupManager:
 
     def _do_backup(
         self, daily: bool = False, label: str = ""
-    ) -> Optional[str]:
+    ) -> str | None:
         """Interne Backup-Methode."""
         if not os.path.exists(self.db_path):
             logger.warning("Datenbank nicht gefunden: %s", self.db_path)
@@ -225,7 +224,7 @@ class BackupManager:
     # Wiederherstellung
     # ------------------------------------------------------------------
 
-    def restore(self, backup_path: str, target_path: Optional[str] = None) -> bool:
+    def restore(self, backup_path: str, target_path: str | None = None) -> bool:
         """
         Stellt ein Backup wieder her.
 
@@ -272,7 +271,7 @@ class BackupManager:
     # Listing
     # ------------------------------------------------------------------
 
-    def list_backups(self, daily: bool = False) -> List[dict]:
+    def list_backups(self, daily: bool = False) -> list[dict]:
         """
         Listet verfügbare Backups auf.
 
@@ -295,7 +294,7 @@ class BackupManager:
             )
         return backups
 
-    def latest_backup(self) -> Optional[str]:
+    def latest_backup(self) -> str | None:
         """Gibt den Pfad zum neuesten Backup zurück."""
         backups = self.list_backups()
         return backups[0]["path"] if backups else None

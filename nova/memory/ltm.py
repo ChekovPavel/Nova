@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +47,7 @@ class LongTermMemory:
         content: str,
         category: str = "general",
         importance: float = 0.5,
-        tags: Optional[List[str]] = None,
+        tags: list[str] | None = None,
         encrypt: bool = False,
     ) -> int:
         """
@@ -90,11 +90,11 @@ class LongTermMemory:
     def recall(
         self,
         query: str = "",
-        category: Optional[str] = None,
+        category: str | None = None,
         min_importance: float = 0.0,
         limit: int = 10,
-        profile_tag: Optional[str] = None,
-    ) -> List[Dict[str, Any]]:
+        profile_tag: str | None = None,
+    ) -> list[dict[str, Any]]:
         """
         Sucht nach Erinnerungen.
 
@@ -150,7 +150,7 @@ class LongTermMemory:
             )
         return results
 
-    def recall_by_id(self, memory_id: int) -> Optional[Dict[str, Any]]:
+    def recall_by_id(self, memory_id: int) -> dict[str, Any] | None:
         """Gibt eine einzelne Erinnerung anhand ihrer ID zurück."""
         row = self._db.fetchone(
             "SELECT * FROM memories WHERE id=?", (memory_id,)
@@ -163,7 +163,7 @@ class LongTermMemory:
         entry["tags"] = self._db.from_json(entry.get("tags", "[]"))
         return entry
 
-    def get_important(self, top_n: int = 5) -> List[Dict[str, Any]]:
+    def get_important(self, top_n: int = 5) -> list[dict[str, Any]]:
         """Gibt die wichtigsten Erinnerungen zurück."""
         return self.recall(min_importance=0.7, limit=top_n)
 
@@ -191,7 +191,7 @@ class LongTermMemory:
     # Statistik
     # ------------------------------------------------------------------
 
-    def stats(self) -> Dict[str, Any]:
+    def stats(self) -> dict[str, Any]:
         """Gibt eine Übersicht über das LTM zurück."""
         total = self._db.fetchone("SELECT COUNT(*) AS n FROM memories")
         by_cat = self._db.fetchall(

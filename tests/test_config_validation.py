@@ -1,8 +1,6 @@
 """Tests for config validation in nova.core.nova."""
 from __future__ import annotations
 
-import pytest
-
 from nova.core.nova import validate_config
 
 

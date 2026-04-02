@@ -9,7 +9,7 @@ Antwortgenerierung.
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -29,16 +29,16 @@ class ContextManager:
         self._stm = stm
         self._ltm = ltm
         self._rel = relationships
-        self._active_person_id: Optional[int] = None
-        self._topics: List[str] = []
-        self._open_questions: List[str] = []
-        self._session_data: Dict[str, Any] = {}
+        self._active_person_id: int | None = None
+        self._topics: list[str] = []
+        self._open_questions: list[str] = []
+        self._session_data: dict[str, Any] = {}
 
     # ------------------------------------------------------------------
     # Session
     # ------------------------------------------------------------------
 
-    def set_active_person(self, person_id: Optional[int]) -> None:
+    def set_active_person(self, person_id: int | None) -> None:
         self._active_person_id = person_id
 
     def set_stm(self, stm) -> None:
@@ -82,7 +82,7 @@ class ContextManager:
     # Kontext-Snapshot
     # ------------------------------------------------------------------
 
-    def snapshot(self, n_messages: int = 8) -> Dict[str, Any]:
+    def snapshot(self, n_messages: int = 8) -> dict[str, Any]:
         """
         Erzeugt einen vollständigen Kontext-Snapshot.
 
@@ -116,8 +116,8 @@ class ContextManager:
     # ------------------------------------------------------------------
 
     def enrich_with_ltm(
-        self, query: str, max_memories: int = 3, profile_tag: Optional[str] = None
-    ) -> List[Dict[str, Any]]:
+        self, query: str, max_memories: int = 3, profile_tag: str | None = None
+    ) -> list[dict[str, Any]]:
         """Lädt relevante LTM-Erinnerungen für den aktuellen Kontext.
 
         Args:

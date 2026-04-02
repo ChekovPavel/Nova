@@ -1,8 +1,6 @@
 """Tests for input size validation in nova.safety.social_safety."""
 from __future__ import annotations
 
-import pytest
-
 
 class TestInputSizeValidation:
     """DoS protection via input length limits."""

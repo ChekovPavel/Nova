@@ -12,7 +12,7 @@ from __future__ import annotations
 import logging
 import re
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +22,7 @@ def _now_iso() -> str:
 
 
 # Muster für Fakten-Extraktion: "X ist Y", "X heißt Y", "X mag Y"
-_FACT_PATTERNS: List[Tuple[str, str, str]] = [
+_FACT_PATTERNS: list[tuple[str, str, str]] = [
     # (pattern, subject_group, object_group)
     (r"([\w\s]+)\s+ist\s+([\w\s]+)", "1", "2"),
     (r"([\w\s]+)\s+heißt?\s+([\w\s]+)", "1", "2"),
@@ -70,7 +70,7 @@ class Learner:
         text: str,
         source: str = "user",
         confidence: float = 0.8,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Extrahiert Fakten aus ``text`` und speichert sie ins LTM.
 
@@ -119,7 +119,7 @@ class Learner:
     # Feedback verarbeiten
     # ------------------------------------------------------------------
 
-    def process_feedback(self, text: str) -> Optional[str]:
+    def process_feedback(self, text: str) -> str | None:
         """
         Analysiert Nutzerfeedback und passt Traits an.
 
@@ -170,7 +170,7 @@ class Learner:
 
     def _extract_facts(
         self, text: str
-    ) -> List[Tuple[str, str, str]]:
+    ) -> list[tuple[str, str, str]]:
         """Gibt Liste von (subject, predicate, object) zurück."""
         results = []
         for pattern, _sg, _og in _FACT_PATTERNS:

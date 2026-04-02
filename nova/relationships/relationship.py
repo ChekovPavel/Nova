@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -28,12 +28,12 @@ def _now_iso() -> str:
 class Person:
     """Repräsentiert eine bekannte Person."""
 
-    def __init__(self, row: Dict[str, Any], db) -> None:
+    def __init__(self, row: dict[str, Any], db) -> None:
         self._db = db
         self.id: int = row["id"]
         self.name: str = row["name"]
-        self.aliases: List[str] = db.from_json(row.get("aliases", "[]"))
-        self.profile: Dict[str, Any] = db.from_json(row.get("profile", "{}"))
+        self.aliases: list[str] = db.from_json(row.get("aliases", "[]"))
+        self.profile: dict[str, Any] = db.from_json(row.get("profile", "{}"))
         self.trust_level: float = row.get("trust_level", 0.5)
         self.first_seen: str = row.get("first_seen", _now_iso())
         self.last_seen: str = row.get("last_seen", _now_iso())
@@ -92,23 +92,23 @@ class Person:
 
     def add_interest(self, interest: str) -> None:
         """Fügt ein Interesse zur Interessenliste der Person hinzu."""
-        interests: List[str] = self.profile.get("interests", [])
+        interests: list[str] = self.profile.get("interests", [])
         if interest not in interests:
             interests.append(interest)
             self.update_profile("interests", interests)
 
-    def get_interests(self) -> List[str]:
+    def get_interests(self) -> list[str]:
         """Gibt die gespeicherten Interessen der Person zurück."""
         return list(self.profile.get("interests", []))
 
     def set_date_idea(self, idea: str) -> None:
         """Speichert eine Date-Idee für diese Person."""
-        ideas: List[str] = self.profile.get("date_ideas", [])
+        ideas: list[str] = self.profile.get("date_ideas", [])
         if idea not in ideas:
             ideas.append(idea)
             self.update_profile("date_ideas", ideas)
 
-    def get_date_ideas(self) -> List[str]:
+    def get_date_ideas(self) -> list[str]:
         """Gibt gespeicherte Date-Ideen zurück."""
         return list(self.profile.get("date_ideas", []))
 
@@ -116,7 +116,7 @@ class Person:
         """Speichert Kompatibilitätsnotizen."""
         self.update_profile("compatibility_notes", notes)
 
-    def dating_info(self) -> Dict[str, Any]:
+    def dating_info(self) -> dict[str, Any]:
         """
         Gibt eine Zusammenfassung der Dating-relevanten Profilfelder zurück.
 
@@ -146,7 +146,7 @@ class Person:
             return "vertraut"
         return "sehr vertraut"
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "id": self.id,
             "name": self.name,
@@ -171,7 +171,7 @@ class RelationshipModel:
 
     def __init__(self, db) -> None:
         self._db = db
-        self._cache: Dict[int, Person] = {}
+        self._cache: dict[int, Person] = {}
 
     # ------------------------------------------------------------------
     # Personen anlegen
@@ -180,8 +180,8 @@ class RelationshipModel:
     def add_person(
         self,
         name: str,
-        aliases: Optional[List[str]] = None,
-        profile: Optional[Dict[str, Any]] = None,
+        aliases: list[str] | None = None,
+        profile: dict[str, Any] | None = None,
         trust_level: float = 0.5,
     ) -> Person:
         """
@@ -215,7 +215,7 @@ class RelationshipModel:
     # Suchen
     # ------------------------------------------------------------------
 
-    def find_by_name(self, name: str) -> Optional[Person]:
+    def find_by_name(self, name: str) -> Person | None:
         """Sucht eine Person nach Name oder Alias (Volltext)."""
         name_lower = name.lower()
         # Cache
@@ -233,7 +233,7 @@ class RelationshipModel:
                 return p
         return None
 
-    def get_by_id(self, person_id: int) -> Optional[Person]:
+    def get_by_id(self, person_id: int) -> Person | None:
         if person_id in self._cache:
             return self._cache[person_id]
         row = self._db.fetchone(
@@ -245,7 +245,7 @@ class RelationshipModel:
             return p
         return None
 
-    def list_persons(self) -> List[Person]:
+    def list_persons(self) -> list[Person]:
         """Gibt alle bekannten Personen zurück."""
         rows = self._db.fetchall(
             "SELECT * FROM persons ORDER BY last_seen DESC"
@@ -292,7 +292,7 @@ class RelationshipModel:
         person_id: int,
         event_type: str,
         description: str = "",
-    ) -> Optional[int]:
+    ) -> int | None:
         """
         Fügt ein Ereignis zur Timeline einer Person hinzu.
 
@@ -326,9 +326,9 @@ class RelationshipModel:
     def get_timeline(
         self,
         person_id: int,
-        event_type: Optional[str] = None,
+        event_type: str | None = None,
         limit: int = 20,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Gibt die Ereignis-Timeline einer Person zurück.
 
@@ -359,8 +359,8 @@ class RelationshipModel:
     def last_event(
         self,
         person_id: int,
-        event_type: Optional[str] = None,
-    ) -> Optional[Dict[str, Any]]:
+        event_type: str | None = None,
+    ) -> dict[str, Any] | None:
         """
         Gibt das jüngste Ereignis einer Person zurück.
 
@@ -377,8 +377,8 @@ class RelationshipModel:
     def days_since_last_event(
         self,
         person_id: int,
-        event_type: Optional[str] = None,
-    ) -> Optional[float]:
+        event_type: str | None = None,
+    ) -> float | None:
         """
         Berechnet die Tage seit dem letzten Ereignis.
 

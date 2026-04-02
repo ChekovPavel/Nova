@@ -14,7 +14,6 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Dict, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -68,17 +67,17 @@ class PersonRecognition:
 
     def __init__(self, relationship_model) -> None:
         self._rel = relationship_model
-        self._active_person_id: Optional[int] = None
+        self._active_person_id: int | None = None
 
     # ------------------------------------------------------------------
     # Aktive Person
     # ------------------------------------------------------------------
 
     @property
-    def active_person_id(self) -> Optional[int]:
+    def active_person_id(self) -> int | None:
         return self._active_person_id
 
-    def set_active(self, person_id: Optional[int]) -> None:
+    def set_active(self, person_id: int | None) -> None:
         """Setzt die aktuell aktive Person."""
         self._active_person_id = person_id
         if person_id:
@@ -95,7 +94,7 @@ class PersonRecognition:
     # Namensextraktion
     # ------------------------------------------------------------------
 
-    def extract_name_from_text(self, text: str) -> Optional[str]:
+    def extract_name_from_text(self, text: str) -> str | None:
         """
         Versucht, einen Eigennamen aus dem Text zu extrahieren.
 
@@ -141,7 +140,7 @@ class PersonRecognition:
     # Identifikation
     # ------------------------------------------------------------------
 
-    def identify_from_text(self, text: str) -> Optional[int]:
+    def identify_from_text(self, text: str) -> int | None:
         """
         Analysiert Text nach Selbstidentifikation.
 
@@ -183,7 +182,7 @@ class PersonRecognition:
     def register_new_person(
         self,
         name: str,
-        profile: Optional[Dict] = None,
+        profile: dict | None = None,
         trust_level: float = 0.5,
     ):
         """
