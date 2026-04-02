@@ -212,11 +212,8 @@ class MainLoop:
 
         # Modusspezifische Stil-Hinweise (Dating: Vorschläge, Meeting: Agenda)
         if switched_mode and n.suggestion_engine:
-            context_person_id = (
-                n.context_manager.get_active_person().id
-                if n.context_manager.get_active_person()
-                else None
-            )
+            context_person = n.context_manager.get_active_person()
+            context_person_id = context_person.id if context_person else None
             suggestion = n.suggestion_engine.suggest_for_context(
                 mode_name=current_mode,
                 person_id=context_person_id,

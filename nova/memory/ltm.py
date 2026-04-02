@@ -145,12 +145,15 @@ class LongTermMemory:
                 entry["content"] = self._security.decrypt(entry["content"])
             entry["tags"] = self._db.from_json(entry.get("tags", "[]"))
             results.append(entry)
-            # Zugriffsstatistik aktualisieren
-            self._db.execute(
-                "UPDATE memories SET accessed_at=?, access_count=access_count+1 WHERE id=?",
-                (_now_iso(), entry["id"]),
-                commit=True,
+        # Zugriffsstatistik in einem einzigen Batch-Update aktualisieren
+        if results:
+            ids = tuple(entry["id"] for entry in results)
+            placeholders = ",".join("?" * len(ids))
+            sql = (
+                "UPDATE memories SET accessed_at=?, access_count=access_count+1"
+                " WHERE id IN (" + placeholders + ")"
             )
+            self._db.execute(sql, (_now_iso(), *ids), commit=True)
         return results
 
     def recall_by_id(self, memory_id: int) -> Optional[Dict[str, Any]]:

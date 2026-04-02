@@ -73,7 +73,8 @@ class ShortTermMemory:
             ttl=ttl,
             tags=tags or [],
         )
-        self._buffer.append(entry)
+        with self._lock:
+            self._buffer.append(entry)
         logger.debug("STM: Eintrag hinzugefügt (type=%s, rel=%.2f).", entry_type, relevance)
         return entry
 
