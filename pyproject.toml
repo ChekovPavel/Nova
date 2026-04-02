@@ -33,7 +33,7 @@ dev = [
 ]
 
 [project.scripts]
-nova = "main:main"
+nova = "nova.cli:main"
 
 [tool.setuptools.packages.find]
 include = ["nova*"]
