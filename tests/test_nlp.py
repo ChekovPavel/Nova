@@ -46,9 +46,9 @@ class TestIntentDetection:
 
     def test_greeting_intent(self, nlp):
         result = nlp.process("Hallo!")
-        assert result.intent in ("greeting", "greet", "smalltalk", None) or result.intent is not None
+        # Intent may be None or a recognised string
+        assert result.intent is None or isinstance(result.intent, str)
 
     def test_farewell_intent(self, nlp):
         result = nlp.process("Tschüss, bis morgen!")
-        # Just ensure it returns something valid
-        assert result.intent is not None or result.intent is None  # always passes – intent is optional
+        assert result.intent is None or isinstance(result.intent, str)
