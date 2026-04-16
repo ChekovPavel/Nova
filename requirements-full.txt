@@ -1,0 +1,53 @@
+# Nova – Vollständige Abhängigkeitsliste (alle Features)
+# Installiert Kern + alle optionalen Pakete auf einmal:
+#
+#   pip install -r requirements-full.txt
+#
+# Für minimale Installation (nur Kern):
+#   pip install -r requirements.txt
+
+# -----------------------------------------------------------------------
+# Kern
+# -----------------------------------------------------------------------
+# (Nova selbst benötigt nur die Python-Standardbibliothek – kein Pflicht-Paket)
+
+# -----------------------------------------------------------------------
+# Verschlüsselung (Kapitel 19)
+# -----------------------------------------------------------------------
+# Starke Fernet-Verschlüsselung (Fallback: XOR ohne dieses Paket)
+cryptography>=41.0.0
+
+# -----------------------------------------------------------------------
+# Sprachausgabe / TTS (Kapitel 15)
+# -----------------------------------------------------------------------
+pyttsx3>=2.90
+
+# -----------------------------------------------------------------------
+# Spracheingabe / STT (Kapitel 15)
+# -----------------------------------------------------------------------
+SpeechRecognition>=3.10.0
+PyAudio>=0.2.13
+
+# -----------------------------------------------------------------------
+# Lokales Whisper STT – kein Cloud-Dienst (Kapitel 15)
+# -----------------------------------------------------------------------
+faster-whisper>=0.10.0
+
+# -----------------------------------------------------------------------
+# OpenAI-kompatibles SDK – für Cloud-LLM-Backend (Kapitel 20)
+# -----------------------------------------------------------------------
+openai>=1.0.0
+
+# -----------------------------------------------------------------------
+# Erweitertes NLP (Kapitel 3)
+# -----------------------------------------------------------------------
+spacy>=3.7.0
+# Deutsches Sprachmodell – nach der Installation laden mit:
+#   python -m spacy download de_core_news_sm
+# Oder direkt:
+# de_core_news_sm @ https://github.com/explosion/spacy-models/releases/download/de_core_news_sm-3.7.0/de_core_news_sm-3.7.0.tar.gz
+
+# -----------------------------------------------------------------------
+# Tests
+# -----------------------------------------------------------------------
+pytest>=7.0.0
